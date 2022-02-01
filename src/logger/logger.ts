@@ -1,5 +1,5 @@
 import {Inject, Injectable, LoggerService} from '@nestjs/common'
-import {LOGGER_OPTIONS} from './logger.constant'
+import {LOGGER_OPTIONS} from './logger.providers'
 import pino, {Level, Logger as PinoLogger, LoggerOptions} from 'pino'
 
 @Injectable()
