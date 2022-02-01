@@ -6,6 +6,7 @@ import {
   Environment,
 } from 'config'
 import {Logger} from './logger'
+import {LOGGER_OPTIONS} from './logger.constant'
 import {LoggerModuleAsyncOptions} from './logger.interface'
 import {prettyTransport} from './logger.transports'
 
@@ -33,7 +34,7 @@ export class LoggerModule {
     useFactory,
   }: LoggerModuleAsyncOptions): DynamicModule {
     const optionsProvider = {
-      provide: 'LOGGER_OPTIONS',
+      provide: LOGGER_OPTIONS,
       useFactory,
       inject,
     }
