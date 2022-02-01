@@ -1,13 +1,12 @@
 import {Inject, Injectable, LoggerService} from '@nestjs/common'
 import {LOGGER_OPTIONS} from './logger.constant'
-import {LoggerModuleOptions} from './logger.interface'
-import pino, {Level, Logger as PinoLogger} from 'pino'
+import pino, {Level, Logger as PinoLogger, LoggerOptions} from 'pino'
 
 @Injectable()
 export class Logger implements LoggerService {
   private readonly logger: PinoLogger
 
-  constructor(@Inject(LOGGER_OPTIONS) options: LoggerModuleOptions) {
+  constructor(@Inject(LOGGER_OPTIONS) options: LoggerOptions) {
     this.logger = pino(options)
   }
 
