@@ -1,14 +1,11 @@
 import {ClassSerializerInterceptor, ValidationPipe} from '@nestjs/common'
 import {NestFactory, Reflector} from '@nestjs/core'
 import {AppModule} from './app.module'
-import {ConfigService, Environment, EnvironmentVariables} from 'config'
+import {ConfigService, EnvironmentVariables} from 'config'
 import {Logger, loggerMiddleware} from 'logger'
+import {SESSION_CONFIG} from 'session'
 import helmet from 'helmet'
 import session from 'express-session'
-import Redis from 'ioredis'
-import createRedisStore from 'connect-redis'
-
-const RedisStore = createRedisStore(session)
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {bufferLogs: true})
@@ -27,27 +24,7 @@ async function bootstrap() {
 
   app.use(loggerMiddleware)
   app.use(helmet())
-  app.use(
-    session({
-      store: new RedisStore({
-        client: new Redis({
-          host: configService.get('REDIS_PORT'),
-          port: configService.get('REDIS_HOST'),
-        }),
-      }),
-      secret: configService.get('SESSION_COOKIE_SECRET'),
-      resave: false,
-      saveUninitialized: false,
-      name: 'sid',
-      cookie: {
-        path: '/',
-        sameSite: 'lax',
-        httpOnly: true,
-        secure: configService.get('NODE_ENV') === Environment.Production,
-        maxAge: configService.get('SESSION_COOKIE_TTL'),
-      },
-    })
-  )
+  app.use(session(app.get(SESSION_CONFIG)))
 
   await app.listen(port, host)
 }
