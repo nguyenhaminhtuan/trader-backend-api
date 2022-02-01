@@ -1,0 +1,1 @@
+export const LOGGER_OPTIONS = 'LOGGER_OPTIONS'
