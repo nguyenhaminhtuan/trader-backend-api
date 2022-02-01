@@ -5,6 +5,10 @@ import {ConfigService, Environment, EnvironmentVariables} from 'config'
 import {Logger, loggerMiddleware} from 'logger'
 import helmet from 'helmet'
 import session from 'express-session'
+import Redis from 'ioredis'
+import createRedisStore from 'connect-redis'
+
+const RedisStore = createRedisStore(session)
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {bufferLogs: true})
@@ -25,6 +29,12 @@ async function bootstrap() {
   app.use(helmet())
   app.use(
     session({
+      store: new RedisStore({
+        client: new Redis({
+          host: configService.get('REDIS_PORT'),
+          port: configService.get('REDIS_HOST'),
+        }),
+      }),
       secret: configService.get('SESSION_COOKIE_SECRET'),
       resave: false,
       saveUninitialized: false,
