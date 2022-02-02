@@ -11,7 +11,7 @@ import {
 @Module({
   imports: [ConfigModule],
   providers: [dbClientProvider, dbProvider],
-  exports: [DB],
+  exports: [DB_CLIENT, DB],
 })
 export class DatabaseModule implements OnApplicationShutdown {
   constructor(@Inject(DB_CLIENT) private readonly client: DbClient) {}

@@ -1,2 +1,2 @@
 export * from './database.module'
-export {DB, Db} from './database.providers'
+export * from './database.providers'
