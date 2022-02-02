@@ -70,4 +70,23 @@ export class EnvironmentVariables {
   @IsNotEmpty()
   @IsString()
   DB_NAME: string
+
+  @IsUrl()
+  ETOP_API_URL: string
+
+  @IsNotEmpty()
+  @IsString()
+  ETOP_EMAIL: string
+
+  @IsNotEmpty()
+  @IsString()
+  ETOP_PASSWORD: string
+
+  @IsNotEmpty()
+  @IsString()
+  ETOP_APP_ID: string
+
+  @IsNotEmpty()
+  @IsString()
+  ETOP_HOT_VERSION: string
 }

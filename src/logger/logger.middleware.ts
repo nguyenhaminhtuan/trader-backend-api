@@ -19,7 +19,6 @@ const logger = pinoHttp({
     }
   },
   customSuccessMessage: () => 'Request completed',
-  customReceivedMessage: () => 'Request received',
   customErrorMessage: () => 'Request error',
   reqCustomProps: () => ({context: 'LoggerMiddleware'}),
   transport: !isProd && prettyTransport,
