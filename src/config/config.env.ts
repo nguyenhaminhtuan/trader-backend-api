@@ -54,4 +54,20 @@ export class EnvironmentVariables {
 
   @IsNumber()
   REDIS_PORT = 6379
+
+  @IsNotEmpty()
+  @IsString()
+  DB_URI: string
+
+  @IsNotEmpty()
+  @IsString()
+  DB_USERNAME: string
+
+  @IsNotEmpty()
+  @IsString()
+  DB_PASSWORD: string
+
+  @IsNotEmpty()
+  @IsString()
+  DB_NAME: string
 }
