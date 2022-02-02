@@ -2,7 +2,7 @@ import {Provider} from '@nestjs/common'
 import session, {SessionOptions} from 'express-session'
 import connectRedis from 'connect-redis'
 import {ConfigService, Environment, EnvironmentVariables} from 'config'
-import {RedisService} from 'redis'
+import {RedisService} from 'cache'
 
 const RedisStore = connectRedis(session)
 
