@@ -1,2 +1,2 @@
 export * from './database.module'
-export {DB_CLIENT, DbClient} from './database.providers'
+export {DB, Db} from './database.providers'
