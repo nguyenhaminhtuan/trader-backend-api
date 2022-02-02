@@ -3,7 +3,7 @@ import {ConfigService, EnvironmentVariables} from 'config'
 import {HttpService} from '@nestjs/axios'
 import openid from 'openid'
 import {map} from 'rxjs'
-import {SteamPlayer} from './player.interface'
+import {SteamPlayer} from './steam.interfaces'
 
 @Injectable()
 export class SteamService {
