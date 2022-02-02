@@ -1,6 +1,6 @@
 import {Provider} from '@nestjs/common'
 import {ConfigService, EnvironmentVariables, Environment} from 'config'
-import {prettyTransport} from './logger.transports'
+import {mongodbTransport, prettyTransport} from './transports'
 import {LoggerOptions} from 'pino'
 
 export const LOGGER_OPTIONS = 'LOGGER_OPTIONS'
@@ -14,7 +14,7 @@ export const loggerOptionsProvider: Provider = {
     const isProd = configService.get('NODE_ENV') === Environment.Production
     return {
       level: !isProd ? 'debug' : 'info',
-      transport: !isProd && prettyTransport,
+      transport: !isProd ? prettyTransport : mongodbTransport(configService),
     }
   },
 }

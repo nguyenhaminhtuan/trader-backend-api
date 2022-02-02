@@ -1,8 +1,8 @@
 import pinoHttp from 'pino-http'
 import {Request, Response, NextFunction} from 'express'
 import {v4 as uuidV4} from 'uuid'
-import {prettyTransport} from './logger.transports'
 import {ConfigService, Environment, EnvironmentVariables} from 'config'
+import {mongodbTransport, prettyTransport} from './transports'
 
 const configService = new ConfigService<EnvironmentVariables>()
 const isProd = configService.get('NODE_ENV') === Environment.Production
@@ -21,7 +21,7 @@ const logger = pinoHttp({
   customSuccessMessage: () => 'Request completed',
   customErrorMessage: () => 'Request error',
   reqCustomProps: () => ({context: 'LoggerMiddleware'}),
-  transport: !isProd && prettyTransport,
+  transport: !isProd ? prettyTransport : mongodbTransport(configService),
 })
 
 export function loggerMiddleware(
