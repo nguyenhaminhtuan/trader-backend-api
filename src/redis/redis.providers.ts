@@ -1,24 +1,26 @@
-import {Provider} from '@nestjs/common'
+import {Logger, Provider} from '@nestjs/common'
 import {ConfigService, EnvironmentVariables} from 'config'
-import {RedisOptions} from 'ioredis'
+import {RedisModule} from './redis.module'
 import {RedisService} from './redis.service'
 
-export const REDIS_OPTIONS = 'CACHE_OPTIONS'
-
-export const redisOptionsProvider: Provider = {
-  provide: REDIS_OPTIONS,
-  inject: [ConfigService],
-  useFactory: (
-    configService: ConfigService<EnvironmentVariables>
-  ): RedisOptions => ({
-    host: configService.get('REDIS_HOST'),
-    port: configService.get('REDIS_PORT'),
-  }),
-}
-
-export const redisProvider: Provider = {
+export const redisServiceProvider: Provider = {
   provide: RedisService,
-  inject: [REDIS_OPTIONS],
-  useFactory: (options: RedisOptions): RedisService =>
-    new RedisService(options),
+  inject: [ConfigService],
+  useFactory: async (
+    configService: ConfigService<EnvironmentVariables>
+  ): Promise<RedisService> => {
+    const logger = new Logger(RedisModule.name)
+    try {
+      const redisService = new RedisService({
+        host: configService.get('REDIS_HOST'),
+        port: configService.get('REDIS_PORT'),
+      })
+      await redisService.info()
+      logger.log('Redis successfully connected')
+
+      return redisService
+    } catch (error) {
+      logger.error(error)
+    }
+  },
 }
