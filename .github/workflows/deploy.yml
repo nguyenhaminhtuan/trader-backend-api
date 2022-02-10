@@ -1,43 +1,13 @@
-name: Deploy
+name: Build and deploy
 
 on:
   push:
     branches:
       - main
-  workflow_call:
-    secrets:
-      GCP_PROJECT_ID:
-        required: true
-      GCP_SERVICE_NAME:
-        required: true
-      GCP_CREDENTIALS:
-        required: true
 
 env:
   PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
   SERVICE_NAME: ${{ secrets.GCP_SERVICE_NAME }}
-
-  # HOST: ${{ secrets.HOST }}
-  # PORT: ${{ secrets.PORT }}
-
-  # SESSION_COOKIE_SECRET: ${{ secrets.SESSION_COOKIE_SECRET }}
-
-  # DB_URI: ${{ secrets.DB_URI }}
-  # DB_USERNAME: ${{ secrets.DB_USERNAME }}
-  # DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-  # DB_NAME: ${{ secrets.DB_NAME }}
-
-  # STEAM_OPENID_IDENTIFIER: ${{ secrets.STEAM_OPENID_IDENTIFIER }}
-  # STEAM_OPENID_REALM: ${{ secrets.STEAM_OPENID_REALM }}
-  # STEAM_OPENID_RETURN_URL: ${{ secrets.STEAM_OPENID_RETURN_URL }}
-  # STEAM_API_URL: ${{ secrets.STEAM_API_URL }}
-  # STEAM_API_KEY: ${{ secrets.STEAM_API_KEY }}
-
-  # ETOP_API_URL: ${{ secrets.ETOP_API_URL }}
-  # ETOP_EMAIL: ${{ secrets.ETOP_EMAIL }}
-  # ETOP_PASSWORD: ${{ secrets.ETOP_PASSWORD }}
-  # ETOP_APP_ID: ${{ secrets.ETOP_APP_ID }}
-  # ETOP_HOT_VERSION: ${{ secrets.ETOP_HOT_VERSION }}
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -50,13 +20,68 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
     
-    - name: Set up GCR
-      uses: ./.github/actions/gcr
+    - id: auth
+      name: Authenticate to Google Cloud
+      uses: google-github-actions/auth@v0
       with:
-        credentials: ${{ secrets.GCP_CREDENTIALS }}
+        credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+    
+    - name: Set up Google Cloud SDK
+      uses: google-github-actions/setup-gcloud@v0
+
+    - name: Authorize Docker
+      run: gcloud auth configure-docker
     
     - name: Build and push to GCR
       run: |-
         docker build -t asia.gcr.io/$PROJECT_ID/$SERVICE_NAME:$GITHUB_SHA .
         docker push asia.gcr.io/$PROJECT_ID/$SERVICE_NAME:$GITHUB_SHA
   
+  deploy:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    
+    - id: auth
+      name: Authenticate to Google Cloud
+      uses: google-github-actions/auth@v0
+      with:
+        credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+    
+    - name: Set up Google Cloud SDK
+      uses: google-github-actions/setup-gcloud@v0
+
+    - name: Authorize Docker
+      run: gcloud auth configure-docker
+    
+    - name: Deploy to GCE
+      run: |-
+        gcloud compute ssh $SERVICE_NAME --command="docker stop $SERVICE_NAME && \
+        docker stop $SERVICE_NAME && \
+        docker system prune -f -a && \
+        docker pull asia.gcr.io/$PROJECT_ID/$SERVICE_NAME:$GITHUB_SHA
+        docker run --name $SERVICE_NAME -p ${{ secrets.PORT }}:${{ secrets.PORT }} \
+        -e HOST=${{ secrets.HOST }} \
+        -e PORT=${{ secrets.PORT }} \
+        -e SESSION_COOKIE_SECRET=${{ secrets.SESSION_COOKIE_SECRET }} \
+        -e DB_URI=${{ secrets.DB_URI }} \
+        -e DB_USERNAME=${{ secrets.DB_USERNAME }} \
+        -e DB_PASSWORD=${{ secrets.DB_PASSWORD}} \
+        -e DB_NAME=${{ secrets.DB_NAME }} \
+        -e STEAM_OPENID_IDENTIFIER=${{ secrets.STEAM_OPENID_IDENTIFIER }} \
+        -e STEAM_OPENID_REALM=${{ secrets.STEAM_OPENID_REALM }} \
+        -e STEAM_OPENID_REALM=${{ secrets.STEAM_OPENID_REALM }} \
+        -e STEAM_API_URL=${{ secrets.STEAM_API_URL }} \
+        -e STEAM_API_KEY=${{ secrets.STEAM_API_KEY }} \
+        -e ETOP_API_URL=${{ secrets.ETOP_API_URL }} \
+        -e ETOP_EMAIL=${{ secrets.ETOP_EMAIL }} \
+        -e ETOP_PASSWORD=${{ secrets.ETOP_PASSWORD }} \
+        -e ETOP_APP_ID=${{ secrets.ETOP_APP_ID }} \
+        -e ETOP_HOT_VERSION=${{ secrets.ETOP_HOT_VERSION }} \
+        -d --restart always asia.gcr.io/$PROJECT_ID/$SERVICE_NAME:$GITHUB_SHA"
