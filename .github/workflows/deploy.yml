@@ -45,7 +45,6 @@ jobs:
       run: |-
         gcloud compute ssh $SERVICE_NAME
         docker system prune -f -a
-        docker pull asia.gcr.io/$PROJECT_ID/$SERVICE_NAME:$GITHUB_SHA
         "docker run -d \
         -p ${{ secrets.PORT }}:${{ secrets.PORT }} \
         --name $SERVICE_NAME \
