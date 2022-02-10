@@ -1,0 +1,29 @@
+name: Setup access GCR
+
+on:
+  workflow_call:
+    inputs:
+      credentials:
+        required: true
+        type: string
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write
+    
+    steps:
+    - id: auth
+      name: Authenticate to Google Cloud
+      uses: google-github-actions/auth@v0
+      with:
+        credentials_json: ${{ inputs.credentials }}
+    
+    - name: Set up Google Cloud SDK
+      uses: google-github-actions/setup-gcloud@v0
+
+    - name: Authorize Docker
+      run: gcloud auth configure-docker

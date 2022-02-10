@@ -1,8 +1,20 @@
 name: Deploy
+
 on:
   push:
     branches:
       - main
+  workflow_call:
+    secrets:
+      GCP_PROJECT_ID:
+        required: true
+        type: string
+      GCP_SERVICE_NAME:
+        required: true
+        type: string
+      GCP_CREDENTIALS:
+        required: true
+
 env:
   PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
   SERVICE_NAME: ${{ secrets.GCP_SERVICE_NAME }}
@@ -32,27 +44,17 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    permissions:
-      contents: read
-      id-token: write
-
     steps:
     - name: Checkout
       uses: actions/checkout@v2
-
-    - id: auth
-      name: Authenticate to Google Cloud
-      uses: google-github-actions/auth@v0
-      with:
-        credentials_json: ${{ secrets.GCP_CREDENTIALS }}
     
-    - name: Set up Google Cloud SDK
-      uses: google-github-actions/setup-gcloud@v0
-
-    - name: Authorize docker push
-      run: gcloud auth configure-docker
+    - name: Set up GCR
+      uses: ./github/actions/gcr
+      with:
+        credentials: ${{ secrets.GCP_CREDENTIALS }}
     
     - name: Build and push to GCR
       run: |-
         docker build -t asia.gcr.io/$PROJECT_ID/$SERVICE_NAME:$GITHUB_SHA .
         docker push asia.gcr.io/$PROJECT_ID/$SERVICE_NAME:$GITHUB_SHA
+  
