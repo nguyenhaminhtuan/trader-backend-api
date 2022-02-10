@@ -8,10 +8,8 @@ on:
     secrets:
       GCP_PROJECT_ID:
         required: true
-        type: string
       GCP_SERVICE_NAME:
         required: true
-        type: string
       GCP_CREDENTIALS:
         required: true
 
