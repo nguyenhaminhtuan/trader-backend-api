@@ -30,7 +30,7 @@ env:
   # ETOP_HOT_VERSION: ${{ secrets.ETOP_HOT_VERSION }}
 jobs:
   build:
-    run-ons: ubuntu-latest
+    runs-on: ubuntu-latest
 
     permissions:
       contents: read
