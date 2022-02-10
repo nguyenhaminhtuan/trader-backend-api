@@ -38,7 +38,7 @@ jobs:
     
     # - name: Build and push to GCR
     #   run: |-
-    #     docker build -t asia.gcr.io/$PROJECT_ID/$SERVICE_NAME:$GITHUB_SHA .
+    #     docker build -t asia.gcr.io/$PROJECT_ID/$SERVICE_NAME:$GITHUB_SHA -t asia.gcr.io/$PROJECT_ID/$SERVICE_NAME:latest .
     #     docker push asia.gcr.io/$PROJECT_ID/$SERVICE_NAME:$GITHUB_SHA
 
     - name: Deploy to GCE
@@ -46,7 +46,7 @@ jobs:
         gcloud compute ssh $SERVICE_NAME
         alias docker=podman
         docker system prune -f -a
-        docker pull asia.gcr.io/$PROJECT_ID/$SERVICE_NAME:$GITHUB_SHA
+        docker pull asia.gcr.io/$PROJECT_ID/$SERVICE_NAME
         docker run --name $SERVICE_NAME -p ${{ secrets.PORT }}:${{ secrets.PORT }} \
             -e HOST=${{ secrets.HOST }} \
             -e PORT=${{ secrets.PORT }} \
@@ -65,4 +65,4 @@ jobs:
             -e ETOP_PASSWORD=${{ secrets.ETOP_PASSWORD }} \
             -e ETOP_APP_ID=${{ secrets.ETOP_APP_ID }} \
             -e ETOP_HOT_VERSION=${{ secrets.ETOP_HOT_VERSION }} \
-            -d --restart always asia.gcr.io/$PROJECT_ID/$SERVICE_NAME:$GITHUB_SHA
+            -d --restart always asia.gcr.io/$PROJECT_ID/$SERVICE_NAME
