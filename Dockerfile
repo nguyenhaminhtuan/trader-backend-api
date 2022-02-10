@@ -1,12 +1,13 @@
-FROM node:14.19-alpine AS build
+FROM node:16.14-alpine AS base
 WORKDIR /usr/src/app
+
+FROM base AS build
 COPY package*.json ./
 RUN npm i
 COPY . ./
 RUN npm run build
 
-FROM node:14.19-alpine AS production
-WORKDIR /usr/src/app
+FROM base AS production
 RUN apk add --update dumb-init
 COPY --from=build /usr/src/app/package*.json ./
 RUN npm i --only=production

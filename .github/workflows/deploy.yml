@@ -10,7 +10,7 @@ env:
   SERVICE_NAME: ${{ secrets.GCP_SERVICE_NAME }}
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
 
     permissions:
@@ -40,6 +40,9 @@ jobs:
       run: |-
         docker build -t asia.gcr.io/$PROJECT_ID/$SERVICE_NAME:$GITHUB_SHA .
         docker push asia.gcr.io/$PROJECT_ID/$SERVICE_NAME:$GITHUB_SHA
+
+    - name: Set alias docker
+      run: alias docker=podman
     
     - name: Deploy to GCE
       run: gcloud compute ssh $SERVICE_NAME --command="docker stop $SERVICE_NAME && \
