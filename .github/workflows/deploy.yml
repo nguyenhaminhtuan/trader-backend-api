@@ -45,7 +45,7 @@ jobs:
       run: gcloud compute ssh $SERVICE_NAME --command="alias docker=podman"
     
     - name: Deploy to GCE
-      run: gcloud compute ssh $SERVICE_NAME --command="docker stop $SERVICE_NAME && \
+      run: gcloud compute ssh $SERVICE_NAME --command="alias docker=podman && \
         docker stop $SERVICE_NAME && \
         docker system prune -f -a && \
         docker pull asia.gcr.io/$PROJECT_ID/$SERVICE_NAME:$GITHUB_SHA && \
