@@ -44,9 +44,8 @@ jobs:
     - name: Deploy to GCE
       run: |-
         gcloud compute ssh $SERVICE_NAME
-        alias docker=podman
         docker system prune -f -a
-        docker pull asia.gcr.io/$PROJECT_ID/$SERVICE_NAME
+        docker pull asia.gcr.io/$PROJECT_ID/$SERVICE_NAME:$GITHUB_SHA
         docker run --name $SERVICE_NAME -p ${{ secrets.PORT }}:${{ secrets.PORT }} \
             -e HOST=${{ secrets.HOST }} \
             -e PORT=${{ secrets.PORT }} \
@@ -65,4 +64,4 @@ jobs:
             -e ETOP_PASSWORD=${{ secrets.ETOP_PASSWORD }} \
             -e ETOP_APP_ID=${{ secrets.ETOP_APP_ID }} \
             -e ETOP_HOT_VERSION=${{ secrets.ETOP_HOT_VERSION }} \
-            -d --restart always asia.gcr.io/$PROJECT_ID/$SERVICE_NAME
+            -d --restart always asia.gcr.io/$PROJECT_ID/$SERVICE_NAME:$GITHUB_SHA
