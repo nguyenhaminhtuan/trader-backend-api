@@ -47,7 +47,7 @@ jobs:
         docker system prune -f -a
 
     - name: Run container
-      run: docker run -d \
+      run: gcloud compute ssh $SERVICE_NAME --command="docker run -d \
         -p ${{ secrets.PORT }}:${{ secrets.PORT }} \
         --name $SERVICE_NAME \
         --restart always \
@@ -68,4 +68,4 @@ jobs:
         -e ETOP_PASSWORD=${{ secrets.ETOP_PASSWORD }} \
         -e ETOP_APP_ID=${{ secrets.ETOP_APP_ID }} \
         -e ETOP_HOT_VERSION=${{ secrets.ETOP_HOT_VERSION }} \
-        asia.gcr.io/$PROJECT_ID/$SERVICE_NAME:$GITHUB_SHA
+        asia.gcr.io/$PROJECT_ID/$SERVICE_NAME:$GITHUB_SHA"
