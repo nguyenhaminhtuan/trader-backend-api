@@ -54,7 +54,7 @@ jobs:
       run: echo "GCP_OAUTH2_ACCESS_TOKEN=$(gcloud auth print-access-token)" >> $GITHUB_ENV
     
     - name: Authorize docker inside GCE
-      run: docker login -u oauth2accesstoken -p $GCP_OAUTH2_ACCESS_TOKEN https://asia.gcr.io
+      run: gcloud compute ssh $SERVICE_NAME --command="docker login -u oauth2accesstoken -p $GCP_OAUTH2_ACCESS_TOKEN https://asia.gcr.io"
     
     - name: Pull docker image and deploy container
       run: gcloud compute ssh $SERVICE_NAME --command="docker pull $DOCKER_IMAGE:$GITHUB_SHA && docker run -d -p ${{ secrets.PORT }}:${{ secrets.PORT }} --name=$SERVICE_NAME --restart=always $DOCKER_IMAGE:$GITHUB_SHA"
