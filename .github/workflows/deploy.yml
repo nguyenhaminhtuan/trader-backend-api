@@ -40,4 +40,5 @@ jobs:
     - name: Build and push to GCR
       run: |-
         docker build -t $DOCKER_IMAGE:$GITHUB_SHA -t $DOCKER_IMAGE:latest .
-        docker push $DOCKER_IMAGE:$GITHUB_SHA $DOCKER_IMAGE:latest
+        docker push $DOCKER_IMAGE:$GITHUB_SHA
+        docker push $DOCKER_IMAGE:latest
