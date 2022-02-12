@@ -51,4 +51,4 @@ jobs:
       run: gcloud compute ssh $SERVICE_NAME --command="docker system prune -f -a"
     
     - name: Pull docker image and deploy container
-      run: gcloud compute ssh $SERVICE_NAME --command="docker run -d -p ${{ secrets.PORT }}:${{ secrets.PORT }} --name=$SERVICE_NAME --restart=always $DOCKER_IMAGE:$GITHUB_SHA"
+      run: gcloud compute ssh $SERVICE_NAME --command="docker pull $DOCKER_IMAGE:$GITHUB_SHA && docker run -d -p ${{ secrets.PORT }}:${{ secrets.PORT }} --name=$SERVICE_NAME --restart=always $DOCKER_IMAGE:$GITHUB_SHA"
