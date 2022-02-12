@@ -8,7 +8,7 @@ on:
 env:
   PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
   SERVICE_NAME: ${{ secrets.GCP_SERVICE_NAME }}
-  DOCKER_IMAGE: asia.gcr.io/${{ secrets.PROJECT_ID }}/${{ secrets.SERVICE_NAME }}
+  DOCKER_IMAGE: asia.gcr.io/$PROJECT_ID/$$SERVICE_NAME
 
 jobs:
   deploy:
