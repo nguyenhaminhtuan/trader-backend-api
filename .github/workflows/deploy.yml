@@ -59,10 +59,13 @@ jobs:
         echo "HOST=${{ secrets.HOST }}" >> .env
         echo "PORT=${{ secrets.PORT }}" >> .env
         echo "SESSION_COOKIE_SECRET=${{ secrets.SESSION_COOKIE_SECRET }}" >> .env
+        echo "SESSION_COOKIE_TTL=${{ secrets.SESSION_COOKIE_TTL }}" >> .env
         echo "DB_URI=${{ secrets.DB_URI }}" >> .env
         echo "DB_USERNAME=${{ secrets.DB_USERNAME }}" >> .env
         echo "DB_PASSWORD=${{ secrets.DB_PASSWORD}}" >> .env
         echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
+        echo "REDIS_HOST=${{ secrets.REDIS_HOST }}" >> .env
+        echo "REDIS_PORT=${{ secrets.REDIS_PORT }}" >> .env
         echo "STEAM_OPENID_IDENTIFIER=${{ secrets.STEAM_OPENID_IDENTIFIER }}" >> .env
         echo "STEAM_OPENID_REALM=${{ secrets.STEAM_OPENID_REALM }}" >> .env
         echo "STEAM_OPENID_RETURN_URL=${{ secrets.STEAM_OPENID_RETURN_URL }}" >> .env
