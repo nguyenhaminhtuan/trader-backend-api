@@ -81,7 +81,7 @@ jobs:
       run: gcloud compute ssh $SERVICE_NAME --command="docker login -u oauth2accesstoken -p $GCP_ACCESS_TOKEN https://asia.gcr.io"
     
     - name: Pull docker image and deploy container
-      run: gcloud compute ssh $SERVICE_NAME --command="docker pull $DOCKER_IMAGE:$GITHUB_SHA && docker run -d -p ${{ secrets.PORT }}:${{ secrets.PORT }} --name=$SERVICE_NAME --restart=always --env-file=~/.env $DOCKER_IMAGE:$GITHUB_SHA"
+      run: gcloud compute ssh $SERVICE_NAME --command="docker pull $DOCKER_IMAGE:$GITHUB_SHA && docker run -d -p ${{ secrets.PORT }}:${{ secrets.PORT }} --name=$SERVICE_NAME --restart=always --env-file=/home/runner/.env $DOCKER_IMAGE:$GITHUB_SHA"
 
     - name: Remove .env file inside GCE
-      run: gcloud compute ssh $SERVICE_NAME --command="rm -rf ~/.env"
+      run: gcloud compute ssh $SERVICE_NAME --command="rm -rf /home/runner/.env"
