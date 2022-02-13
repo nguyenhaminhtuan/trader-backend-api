@@ -13,7 +13,7 @@ export const redisServiceProvider: Provider = {
     try {
       const redisService = new RedisService({
         host: configService.get('REDIS_HOST'),
-        port: configService.get('REDIS_PORT'),
+        port: +configService.get('REDIS_PORT'),
       })
       await redisService.info()
       logger.log('Redis successfully connected')

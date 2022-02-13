@@ -45,14 +45,14 @@ export class EnvironmentVariables {
   @IsString()
   SESSION_COOKIE_SECRET: string
 
-  @IsNumber()
+  @IsNotEmpty()
   SESSION_COOKIE_TTL = 86400000
 
   @IsNotEmpty()
   @IsString()
   REDIS_HOST = '127.0.0.1'
 
-  @IsNumber()
+  @IsNotEmpty()
   REDIS_PORT = 6379
 
   @IsNotEmpty()

@@ -25,7 +25,7 @@ export const sessionConfigProvider: Provider = {
       sameSite: 'lax',
       httpOnly: true,
       secure: configService.get('NODE_ENV') === Environment.Production,
-      maxAge: configService.get('SESSION_COOKIE_TTL'),
+      maxAge: +configService.get('SESSION_COOKIE_TTL'),
     },
   }),
 }
