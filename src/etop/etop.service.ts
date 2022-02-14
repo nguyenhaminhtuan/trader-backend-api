@@ -1,9 +1,9 @@
-import {CACHE_MANAGER, Inject, Injectable, Logger} from '@nestjs/common'
+import {Injectable, InternalServerErrorException, Logger} from '@nestjs/common'
 import {ConfigService, EnvironmentVariables} from 'config'
 import {HttpService} from '@nestjs/axios'
-import {Cache} from 'cache-manager'
+import {RedisService} from 'cache'
 import {firstValueFrom, map} from 'rxjs'
-import {EtopBag, EtopItem, EtopLogin, EtopResponse} from './etop.interfaces'
+import {EtopBag, EtopLogin, EtopResponse} from './etop.interfaces'
 
 @Injectable()
 export class EtopService {
@@ -12,22 +12,21 @@ export class EtopService {
   private readonly loginEndpoint = '/mobile/tologin.do'
 
   constructor(
-    @Inject(CACHE_MANAGER)
-    private readonly cacheManager: Cache,
+    private readonly redisService: RedisService,
     private readonly configService: ConfigService<EnvironmentVariables>,
     private readonly httpService: HttpService
   ) {
     this.httpService.axiosRef.interceptors.request.use(
       async (config) => {
         if (config.url !== this.loginEndpoint && config.headers) {
-          let cookie = await this.cacheManager.get<string>(this.credentialsKey)
+          let cookie = await this.redisService.get(this.credentialsKey)
 
           if (!cookie) {
             await this.login()
-            cookie = await this.cacheManager.get<string>(this.credentialsKey)
+            cookie = await this.redisService.get(this.credentialsKey)
           }
 
-          config.headers['Set-Cookie'] = cookie || ''
+          config.headers['Cookie'] = cookie || ''
         }
 
         return config
@@ -58,19 +57,22 @@ export class EtopService {
       return
     }
 
-    const credentials = headers['set-cookie']?.find((cookie) =>
-      cookie.startsWith('DJSP_USER=')
-    )
+    const credentials = headers['set-cookie'].join('; ')
     this.logger.debug({credentials}, 'Credentails')
-    this.cacheManager.set(this.credentialsKey, credentials, {ttl: 24 * 60 * 60})
+    await this.redisService.set(
+      this.credentialsKey,
+      credentials,
+      'ex',
+      24 * 60 * 60
+    )
   }
 
-  async getListItems(page: number, rows: number): Promise<EtopItem[]> {
+  async getListItems(page: number, rows: number): Promise<EtopBag> {
     const cacheKey = `${this.getListItems.name}_${page}_${rows}`
-    const cache = await this.cacheManager.get<EtopItem[]>(cacheKey)
+    const cache = await this.redisService.get(cacheKey)
 
     if (cache) {
-      return cache
+      return JSON.parse(cache)
     }
 
     const appid = this.configService.get('ETOP_APP_ID')
@@ -93,10 +95,10 @@ export class EtopService {
           `Get bag error with code ${response.code} and statusCode ${response.statusCode}`
         )
       )
-      return []
+      throw new InternalServerErrorException()
     }
 
-    await this.cacheManager.set(cacheKey, response.data.list)
-    return response.data.list
+    await this.redisService.set(cacheKey, JSON.stringify(response.datas))
+    return response.datas
   }
 }

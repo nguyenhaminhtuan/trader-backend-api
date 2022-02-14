@@ -5,6 +5,7 @@ export interface EtopResponse<T> {
   statusCode: number
   type: 'success' | 'error'
   data: T
+  datas: T
 }
 
 export interface EtopLogin {

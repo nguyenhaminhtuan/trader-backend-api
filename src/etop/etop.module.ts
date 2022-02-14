@@ -14,7 +14,8 @@ import {EtopControler} from './etop.controller'
       inject: [ConfigService],
       useFactory: (configService: ConfigService<EnvironmentVariables>) => ({
         baseURL: configService.get('ETOP_API_URL'),
-        timeout: 2500,
+        timeout: 3500,
+        withCredentials: true,
       }),
     }),
   ],
