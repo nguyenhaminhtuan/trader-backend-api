@@ -14,7 +14,6 @@ export class GracefulService {
 
   async use(app: INestApplication, opts: {delay: number}) {
     closeWithGrace({delay: opts.delay}, async ({err, signal}) => {
-      this.logger.log('Start shutdown application gracefully')
       if (err) {
         this.logger.error({err})
       }
@@ -22,6 +21,8 @@ export class GracefulService {
       if (signal) {
         this.logger.log(`${signal} received`)
       }
+
+      this.logger.log('Start shutdown application gracefully')
 
       this.logger.log('Start disconnect redis')
       this.redisService.disconnect(false)
