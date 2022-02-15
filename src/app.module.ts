@@ -9,6 +9,8 @@ import {GracefulModule} from 'graceful'
 import {AuthModule} from 'auth'
 import {SteamModule} from 'steam'
 import {EtopModule} from 'etop'
+import {UsersModule} from 'users'
+import {MeModule} from 'me'
 
 @Module({
   imports: [
@@ -22,6 +24,8 @@ import {EtopModule} from 'etop'
     AuthModule,
     SteamModule,
     EtopModule,
+    UsersModule,
+    MeModule,
   ],
 })
 export class AppModule {}

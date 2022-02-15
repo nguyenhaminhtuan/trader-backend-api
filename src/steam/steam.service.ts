@@ -2,7 +2,7 @@ import {Injectable, Logger} from '@nestjs/common'
 import {ConfigService, EnvironmentVariables} from 'config'
 import {HttpService} from '@nestjs/axios'
 import openid from 'openid'
-import {map} from 'rxjs'
+import {map, Observable} from 'rxjs'
 import {SteamPlayer} from './steam.interfaces'
 
 @Injectable()
@@ -52,16 +52,16 @@ export class SteamService {
     })
   }
 
-  getPlayerSummaries(steamId: string) {
+  getPlayerSummaries(steamids: string | string[]): Observable<SteamPlayer[]> {
     const endpoint = '/ISteamUser/GetPlayerSummaries'
     const version = 'v0002'
     return this.httpService
       .get<{response: {players: SteamPlayer[]}}>(`${endpoint}/${version}`, {
         params: {
           key: this.configService.get('STEAM_API_KEY'),
-          steamids: steamId,
+          steamids,
         },
       })
-      .pipe(map((res) => res.data.response))
+      .pipe(map((res) => res.data.response.players))
   }
 }
