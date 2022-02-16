@@ -1,13 +1,8 @@
-import {
-  ClassSerializerInterceptor,
-  ValidationPipe,
-  Logger as NestLogger,
-} from '@nestjs/common'
-import {NestFactory, Reflector} from '@nestjs/core'
+import {ValidationPipe, Logger as NestLogger} from '@nestjs/common'
+import {NestFactory} from '@nestjs/core'
 import {AppModule} from './app.module'
-import {ConfigService, EnvironmentVariables} from 'config'
+import {ConfigService, EnvironmentVariables, SessionConfig} from 'config'
 import {Logger, loggerMiddleware} from 'logger'
-import {SESSION_CONFIG} from 'session'
 import {gracefulMiddleware, GracefulService} from 'graceful'
 import helmet from 'helmet'
 import session from 'express-session'
@@ -25,11 +20,10 @@ async function bootstrap() {
   app.setGlobalPrefix('api')
   app.enableCors({origin: [], credentials: true})
   app.useGlobalPipes(new ValidationPipe())
-  app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)))
 
   app.use(loggerMiddleware)
   app.use(helmet())
-  app.use(session(app.get(SESSION_CONFIG)))
+  app.use(session(app.get(SessionConfig)))
   app.use(gracefulMiddleware)
   app.get(GracefulService).use(app, {delay: 3000})
 

@@ -1,5 +1,5 @@
 import {INestApplication, Inject, Injectable, Logger} from '@nestjs/common'
-import {RedisService} from 'cache'
+import {RedisService} from 'redis'
 import {DB_CLIENT, DbClient} from 'database'
 import closeWithGrace from 'close-with-grace'
 

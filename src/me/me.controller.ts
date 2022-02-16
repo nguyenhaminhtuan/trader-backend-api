@@ -1,13 +1,13 @@
-import {Controller, Get, Session, UseGuards} from '@nestjs/common'
-import {AuthGuard} from 'auth'
+import {Controller, Get} from '@nestjs/common'
 import {firstValueFrom} from 'rxjs'
-import {UserSession} from 'shared/types'
+import {Auth, CurrentUser} from 'shared/decorators'
 import {SteamService} from 'steam'
+import {User} from 'users'
 import {MeDto} from './dto'
 import {MeService} from './me.service'
 
 @Controller('/me')
-@UseGuards(AuthGuard)
+@Auth()
 export class MeController {
   constructor(
     private readonly meService: MeService,
@@ -15,11 +15,10 @@ export class MeController {
   ) {}
 
   @Get()
-  async getMe(@Session() session: UserSession): Promise<any> {
-    const currentUser = session.user
+  async getMe(@CurrentUser() user: User): Promise<any> {
     const players = await firstValueFrom(
-      this.steamService.getPlayerSummaries(currentUser.steamId)
+      this.steamService.getPlayerSummaries(user.steamId)
     )
-    return MeDto.fromUserPlayer(currentUser, players[0])
+    return MeDto.fromUserPlayer(user, players[0])
   }
 }

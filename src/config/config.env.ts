@@ -48,6 +48,8 @@ export class EnvironmentVariables {
   @IsNotEmpty()
   SESSION_COOKIE_TTL = 86400000
 
+  SESSION_PREFIX = 'sess:'
+
   @IsNotEmpty()
   @IsString()
   REDIS_HOST = '127.0.0.1'

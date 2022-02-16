@@ -1,8 +1,5 @@
 import {Module} from '@nestjs/common'
-import {
-  ConfigModule as NestConfigModule,
-  ConfigService as NestConfigService,
-} from '@nestjs/config'
+import {ConfigModule as NestConfigModule} from '@nestjs/config'
 import {ConfigService} from './config.service'
 import {validateEnv} from './env.validation'
 
@@ -13,7 +10,7 @@ import {validateEnv} from './env.validation'
       validate: validateEnv,
     }),
   ],
-  providers: [ConfigService, NestConfigService],
+  providers: [ConfigService],
   exports: [ConfigService],
 })
 export class ConfigModule {}

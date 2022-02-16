@@ -1,5 +1,4 @@
 import {
-  ConflictException,
   Inject,
   Injectable,
   InternalServerErrorException,
@@ -19,11 +18,11 @@ export class UsersService {
     this.collection = db.collection(this.collectionName)
   }
 
-  async createUser(steamId: string): Promise<User> {
+  async findOrCreateUser(steamId: string): Promise<User> {
     this.logger.debug(`Creating user with Steam ID ${steamId}`)
-    if (await this.collection.findOne({steamId})) {
-      this.logger.warn(`Steam ID ${steamId} not found`)
-      throw new ConflictException('User already existed')
+    const existedUser = await this.collection.findOne({steamId})
+    if (existedUser) {
+      return existedUser
     }
 
     const user = new User({steamId})
@@ -39,5 +38,9 @@ export class UsersService {
 
   getUserById(_id: ObjectId): Promise<User> {
     return this.collection.findOne({_id})
+  }
+
+  getUsers(): Promise<User[]> {
+    return this.collection.find().toArray()
   }
 }

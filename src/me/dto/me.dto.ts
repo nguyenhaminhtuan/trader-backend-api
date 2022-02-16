@@ -3,7 +3,7 @@ import {SteamPlayer} from 'steam'
 import {User} from 'users'
 
 export class MeDto {
-  id: ObjectId
+  _id: ObjectId
   name: {
     personal: string
     real: string
@@ -16,7 +16,7 @@ export class MeDto {
 
   static fromUserPlayer(user: User, player: SteamPlayer): MeDto {
     const me = new MeDto()
-    me.id = user._id
+    me._id = user._id
     me.name = {
       personal: player.personaname,
       real: player.realname,

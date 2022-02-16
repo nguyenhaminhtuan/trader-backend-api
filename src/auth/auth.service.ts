@@ -35,8 +35,9 @@ export class AuthService {
       `${this.configService.get('STEAM_OPENID_IDENTIFIER')}/id/`,
       ''
     )
+
     const {result: user} = await wrapAsync(
-      this.usersService.createUser(steamId)
+      this.usersService.findOrCreateUser(steamId)
     )
 
     return user

@@ -1,31 +1,32 @@
 import {Module} from '@nestjs/common'
-import {ConfigModule} from 'config'
-import {LoggerModule} from 'logger'
-import {DatabaseModule} from 'database'
-import {SessionModule} from 'session'
-import {CacheModule} from 'cache'
-import {HealthModule} from 'health'
-import {GracefulModule} from 'graceful'
 import {AuthModule} from 'auth'
-import {SteamModule} from 'steam'
+import {ConfigModule, SessionConfig} from 'config'
+import {DatabaseModule} from 'database'
 import {EtopModule} from 'etop'
-import {UsersModule} from 'users'
+import {GracefulModule} from 'graceful'
+import {HealthModule} from 'health'
+import {LoggerModule} from 'logger'
 import {MeModule} from 'me'
+import {RedisModule} from 'redis'
+import {SessionsModule} from 'sessions'
+import {SteamModule} from 'steam'
+import {UsersModule} from 'users'
 
 @Module({
   imports: [
-    ConfigModule,
-    LoggerModule,
-    DatabaseModule,
-    SessionModule,
-    CacheModule,
-    HealthModule,
-    GracefulModule,
     AuthModule,
-    SteamModule,
+    ConfigModule,
+    DatabaseModule,
     EtopModule,
-    UsersModule,
+    GracefulModule,
+    HealthModule,
+    LoggerModule,
     MeModule,
+    RedisModule,
+    SessionsModule,
+    SteamModule,
+    UsersModule,
   ],
+  providers: [SessionConfig],
 })
 export class AppModule {}

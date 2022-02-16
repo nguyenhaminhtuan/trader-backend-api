@@ -1,10 +1,10 @@
 import {Module} from '@nestjs/common'
-import {CacheModule} from 'cache'
 import {DatabaseModule} from 'database'
+import {RedisModule} from 'redis'
 import {GracefulService} from './graceful.service'
 
 @Module({
-  imports: [DatabaseModule, CacheModule],
+  imports: [DatabaseModule, RedisModule],
   providers: [GracefulService],
 })
 export class GracefulModule {}

@@ -1,7 +1,7 @@
 import {Injectable, InternalServerErrorException, Logger} from '@nestjs/common'
 import {ConfigService, EnvironmentVariables} from 'config'
 import {HttpService} from '@nestjs/axios'
-import {RedisService} from 'cache'
+import {RedisService} from 'redis'
 import {firstValueFrom, map} from 'rxjs'
 import {EtopBag, EtopLogin, EtopResponse} from './etop.interfaces'
 
