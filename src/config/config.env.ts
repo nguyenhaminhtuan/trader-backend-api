@@ -18,10 +18,14 @@ export class EnvironmentVariables {
   NODE_ENV: Environment
 
   @IsIP('4')
-  HOST = '127.0.0.1'
+  HOST: string
 
   @IsNumber()
   PORT: number
+
+  @IsNotEmpty()
+  @IsString()
+  API_URL: string
 
   @IsUrl()
   STEAM_OPENID_IDENTIFIER: string
@@ -46,16 +50,16 @@ export class EnvironmentVariables {
   SESSION_COOKIE_SECRET: string
 
   @IsNotEmpty()
-  SESSION_COOKIE_TTL = 86400000
+  SESSION_COOKIE_TTL: string
 
   SESSION_PREFIX = 'sess:'
 
   @IsNotEmpty()
   @IsString()
-  REDIS_HOST = '127.0.0.1'
+  REDIS_HOST: string
 
   @IsNotEmpty()
-  REDIS_PORT = 6379
+  REDIS_PORT: string
 
   @IsNotEmpty()
   @IsString()
