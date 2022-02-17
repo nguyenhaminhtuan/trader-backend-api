@@ -24,11 +24,9 @@ export class GracefulService {
 
       this.logger.log('Start shutdown application gracefully')
 
-      this.logger.log('Start disconnect redis')
       this.redisService.disconnect(false)
       this.logger.log('Redis disconnected')
 
-      this.logger.log('Start closing database connection')
       await this.dbClient.close()
       this.logger.log('Database connection closed')
 
