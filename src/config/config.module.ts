@@ -8,6 +8,7 @@ import {validateEnv} from './env.validation'
     NestConfigModule.forRoot({
       cache: true,
       validate: validateEnv,
+      expandVariables: true,
     }),
   ],
   providers: [ConfigService],

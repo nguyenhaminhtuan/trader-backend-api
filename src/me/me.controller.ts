@@ -6,7 +6,7 @@ import {User} from 'users'
 import {MeDto} from './dto'
 import {MeService} from './me.service'
 
-@Controller('/me')
+@Controller('me')
 @Auth()
 export class MeController {
   constructor(
