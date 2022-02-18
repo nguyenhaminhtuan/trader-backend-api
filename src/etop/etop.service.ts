@@ -71,37 +71,38 @@ export class EtopService {
 
   async getListItems(query?: GetItemsQueryDto): Promise<EtopItem[]> {
     const cacheKey = this.getListItems.name
+    let items: EtopItem[] = []
     const cache = await this.redisService.get(cacheKey)
 
     if (cache) {
-      return JSON.parse(cache)
-    }
+      items = JSON.parse(cache) as EtopItem[]
+    } else {
+      const appid = this.configService.get('ETOP_APP_ID')
+      const endpoint = `/api/user/bag/${appid}/list.do`
+      const source$ = this.httpService
+        .get<EtopResponse<EtopBag>>(endpoint, {
+          params: {
+            appid,
+            lang: 'en',
+            page: 1,
+            rows: 1000,
+          },
+        })
+        .pipe(map((res) => res.data))
+      const response = await firstValueFrom(source$)
 
-    const appid = this.configService.get('ETOP_APP_ID')
-    const endpoint = `/api/user/bag/${appid}/list.do`
-    const source$ = this.httpService
-      .get<EtopResponse<EtopBag>>(endpoint, {
-        params: {
-          appid,
-          lang: 'en',
-          page: 1,
-          rows: 1000,
-        },
-      })
-      .pipe(map((res) => res.data))
-    const response = await firstValueFrom(source$)
-
-    if (response.type === 'error' || response.statusCode !== 200) {
-      this.logger.error(
-        new Error(
-          `Get user bag error with code ${response.code} and statusCode ${response.statusCode}`
+      if (response.type === 'error' || response.statusCode !== 200) {
+        this.logger.error(
+          new Error(
+            `Get user bag error with code ${response.code} and statusCode ${response.statusCode}`
+          )
         )
-      )
-      throw new InternalServerErrorException()
-    }
+        throw new InternalServerErrorException()
+      }
 
-    let items = response.datas.list
-    await this.redisService.set(cacheKey, JSON.stringify(items))
+      items = response.datas.list
+      await this.redisService.set(cacheKey, JSON.stringify(items))
+    }
 
     if (query.sort) {
       const {value} = query.sort
