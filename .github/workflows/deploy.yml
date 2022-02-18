@@ -11,7 +11,7 @@ env:
   PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
   SERVICE_NAME: ${{ secrets.GCP_SERVICE_NAME }}
   DOCKER_IMAGE: asia.gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_SERVICE_NAME }}
-  INSTANCE_TEMPLATE: ${{ secrets.GCP_SERVICE_NAME }}-template:${{ github.ref_name }}
+  INSTANCE_TEMPLATE: ${{ secrets.GCP_SERVICE_NAME }}-${{ github.sha }}
 
 jobs:
   deploy:
@@ -44,8 +44,8 @@ jobs:
     
     - name: Build and push to GCR
       run: |-
-        docker build -t $DOCKER_IMAGE:${{ github.ref_name }} -t $DOCKER_IMAGE:latest .
-        docker push $DOCKER_IMAGE:${{ github.ref_name }}
+        docker build -t $DOCKER_IMAGE:${{ github.sha }} -t $DOCKER_IMAGE:latest .
+        docker push $DOCKER_IMAGE:${{ github.sha }}
         docker push $DOCKER_IMAGE:latest
 
     - name: Create .env file
