@@ -57,4 +57,4 @@ jobs:
       run: gcloud compute instance-templates create-with-container $INSTANCE_TEMPLATE --machine-type=${{ secrets.GCP_MACHINE_TYPE }} --network-interface=subnet=${{ secrets.GCP_NETWORK_SUBNET }},no-address --service-account=${{ secrets.GCP_SERVICE_ACCOUNT }} --container-image=$DOCKER_IMAGE --container-restart-policy=on-failure --container-env-file ./.env --boot-disk-type pd-ssd --shielded-secure-boot --shielded-vtpm --shielded-integrity-monitoring
 
     - name: Update instance group with new template
-      run: gcloud compute instance-groups managed rolling-action start-update ${{ secrets.GCP_INSTANCE_GROUP }} --version=template=INSTANCE_TEMPLATE
+      run: gcloud compute instance-groups managed rolling-action start-update ${{ secrets.GCP_INSTANCE_GROUP }} --version=template=$INSTANCE_TEMPLATE
