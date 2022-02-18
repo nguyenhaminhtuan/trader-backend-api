@@ -4,8 +4,8 @@ on:
   push:
     branches:
       - main
-    tags:
-      - "v[0-9]+.[0-9]+.[0-9]+"
+    # tags:
+    #   - "v[0-9]+.[0-9]+.[0-9]+"
 
 env:
   PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
@@ -53,17 +53,17 @@ jobs:
     
     - name: Create new instance template with docker image
       run: gcloud compute instance-templates create-with-container $INSTANCE_TEMPLATE \
-      --machine-type=${{ secrets.GCP_MACHINE_TYPE }} \ 
-      --network-interface=subnet=${{ secrets.GCP_NETWORK_SUBNET }},no-addres \
-      --service-account=${{ secrets.GCP_SERVICE_ACCOUNT }} \
-      --container-image=$DOCKER_IMAGE \
-      --container-restart-policy=on-failure \
-      --container-env-file ./.env \
-      --boot-disk-type pd-ssd \
-      --shielded-secure-boot \ 
-      --shielded-vtpm \
-      --shielded-integrity-monitoring
-    
+       --machine-type=${{ secrets.GCP_MACHINE_TYPE }} \
+       --network-interface=subnet=${{ secrets.GCP_NETWORK_SUBNET }},no-addres \
+       --service-account=${{ secrets.GCP_SERVICE_ACCOUNT }} \
+       --container-image=$DOCKER_IMAGE \
+       --container-restart-policy=on-failure \
+       --container-env-file ./.env \
+       --boot-disk-type pd-ssd \
+       --shielded-secure-boot \
+       --shielded-vtpm \
+       --shielded-integrity-monitoring
+
     - name: Update instance group with new template
       run: gcloud compute instance-groups managed rolling-action start-update ${{ secrets.GCP_INSTANCE_GROUP }} \
-      --version=template=INSTANCE_TEMPLATE
+       --version=template=INSTANCE_TEMPLATE
