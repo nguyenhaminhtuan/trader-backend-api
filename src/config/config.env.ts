@@ -25,7 +25,7 @@ export class EnvironmentVariables {
 
   @IsNotEmpty()
   @IsString()
-  API_URL: string
+  DOMAIN_URL: string
 
   @IsUrl()
   STEAM_OPENID_IDENTIFIER: string
