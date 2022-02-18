@@ -34,8 +34,10 @@ jobs:
     - name: Set up Google Cloud SDK
       uses: google-github-actions/setup-gcloud@v0
 
-    - name: Set up zone GCP
-      run: gcloud config set compute/zone ${{ secrets.GCP_REGION }}
+    - name: Set up region and zone GCP
+      run: |-
+        gcloud config set compute/region ${{ secrets.GCP_REGION }}
+        gcloud config set compute/zone ${{ secrets.GCP_ZONE }}
 
     - name: Authorize docker
       run: gcloud auth configure-docker
