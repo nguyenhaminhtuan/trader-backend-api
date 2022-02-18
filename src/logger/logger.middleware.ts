@@ -8,6 +8,9 @@ const configService = new ConfigService<EnvironmentVariables>()
 const isProd = configService.get('NODE_ENV') === Environment.Production
 
 const logger = pinoHttp({
+  autoLogging: {
+    ignorePaths: ['/api/health'],
+  },
   genReqId: (req) => (!isProd ? req.id : uuidV4()),
   customLogLevel: (res, err) => {
     if (res.statusCode >= 500 || err) {
