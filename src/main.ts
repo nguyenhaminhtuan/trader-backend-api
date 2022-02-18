@@ -19,7 +19,7 @@ async function bootstrap() {
   app.useLogger(app.get(Logger))
   app.setGlobalPrefix('api')
   app.enableCors({origin: [], credentials: true})
-  app.useGlobalPipes(new ValidationPipe())
+  app.useGlobalPipes(new ValidationPipe({whitelist: true}))
 
   app.use(loggerMiddleware)
   app.use(helmet())

@@ -3,7 +3,9 @@ import {ConfigService, EnvironmentVariables} from 'config'
 import {HttpService} from '@nestjs/axios'
 import {RedisService} from 'redis'
 import {firstValueFrom, map} from 'rxjs'
-import {EtopBag, EtopLogin, EtopResponse} from './etop.interfaces'
+import {EtopBag, EtopItem, EtopLogin, EtopResponse} from './etop.interfaces'
+import {GetItemsQueryDto} from './dto'
+import {Sort} from 'shared/enums'
 
 @Injectable()
 export class EtopService {
@@ -38,8 +40,8 @@ export class EtopService {
   }
 
   private async login(): Promise<void> {
-    this.logger.debug('Logging Etop')
-    const $source = this.httpService.get<EtopResponse<EtopLogin>>(
+    this.logger.debug('Logging etopfun')
+    const source$ = this.httpService.get<EtopResponse<EtopLogin>>(
       this.loginEndpoint,
       {
         params: {
@@ -50,10 +52,10 @@ export class EtopService {
         },
       }
     )
-    const {data, headers} = await firstValueFrom($source)
+    const {data, headers} = await firstValueFrom(source$)
 
     if (data.type === 'error' || data.statusCode !== 200) {
-      this.logger.error({err: new Error(data.message)}, 'Login Etop failed')
+      this.logger.error({err: new Error(data.message)}, 'Login etopfun failed')
       return
     }
 
@@ -67,8 +69,8 @@ export class EtopService {
     )
   }
 
-  async getListItems(page: number, rows: number): Promise<EtopBag> {
-    const cacheKey = `${this.getListItems.name}_${page}_${rows}`
+  async getListItems(query?: GetItemsQueryDto): Promise<EtopItem[]> {
+    const cacheKey = this.getListItems.name
     const cache = await this.redisService.get(cacheKey)
 
     if (cache) {
@@ -77,28 +79,40 @@ export class EtopService {
 
     const appid = this.configService.get('ETOP_APP_ID')
     const endpoint = `/api/user/bag/${appid}/list.do`
-    const $source = this.httpService
+    const source$ = this.httpService
       .get<EtopResponse<EtopBag>>(endpoint, {
         params: {
           appid,
           lang: 'en',
-          page,
-          rows,
+          page: 1,
+          rows: 1000,
         },
       })
       .pipe(map((res) => res.data))
-    const response = await firstValueFrom($source)
+    const response = await firstValueFrom(source$)
 
     if (response.type === 'error' || response.statusCode !== 200) {
       this.logger.error(
         new Error(
-          `Get bag error with code ${response.code} and statusCode ${response.statusCode}`
+          `Get user bag error with code ${response.code} and statusCode ${response.statusCode}`
         )
       )
       throw new InternalServerErrorException()
     }
 
-    await this.redisService.set(cacheKey, JSON.stringify(response.datas))
-    return response.datas
+    let items = response.datas.list
+    await this.redisService.set(cacheKey, JSON.stringify(items))
+
+    if (query.sort) {
+      const {value} = query.sort
+
+      if (value) {
+        items = items.sort((a, b) =>
+          value === Sort.ASC ? a.value - b.value : b.value - a.value
+        )
+      }
+    }
+
+    return items
   }
 }

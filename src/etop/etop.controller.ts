@@ -1,12 +1,14 @@
 import {Controller, Get, Query} from '@nestjs/common'
+import {GetItemsQueryDto} from './dto'
+import {EtopItem} from './etop.interfaces'
 import {EtopService} from './etop.service'
 
-@Controller('etop')
+@Controller()
 export class EtopControler {
   constructor(private readonly etopService: EtopService) {}
 
   @Get('/items')
-  getEtopBagItems(@Query('page') page = 1, @Query('rows') rows = 200) {
-    return this.etopService.getListItems(page, rows)
+  getEtopBagItems(@Query() query?: GetItemsQueryDto): Promise<EtopItem[]> {
+    return this.etopService.getListItems(query)
   }
 }

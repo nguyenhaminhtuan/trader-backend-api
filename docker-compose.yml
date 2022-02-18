@@ -3,7 +3,7 @@ volumes:
   mongo:
 services:
   cache:
-    container_name: trader_cache
+    container_name: trader_redis
     image: redis
     ports:
       - 6379:6379
