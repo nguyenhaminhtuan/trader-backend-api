@@ -65,5 +65,3 @@ jobs:
        --shielded-secure-boot \ 
        --shielded-vtpm \
        --shielded-integrity-monitoring
-
-    - name: Update instance group with new template
