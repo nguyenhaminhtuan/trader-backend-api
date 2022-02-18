@@ -4,8 +4,8 @@ on:
   push:
     branches:
       - master
-    tags:
-      - "v[0-9]+.[0-9]+.[0-9]+"
+    # tags:
+    #   - "v[0-9]+.[0-9]+.[0-9]+"
 
 env:
   PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
@@ -41,52 +41,20 @@ jobs:
     
     - name: Build and push to GCR
       run: |-
-        docker build -t $DOCKER_IMAGE:$GITHUB_SHA -t $DOCKER_IMAGE:latest .
-        docker push $DOCKER_IMAGE:$GITHUB_SHA
+        docker build -t $DOCKER_IMAGE:${{ github.ref_name }} -t $DOCKER_IMAGE:latest .
+        docker push $DOCKER_IMAGE:${{ github.ref_name }}
         docker push $DOCKER_IMAGE:latest
 
-    - name: Stop and remove existed container
-      continue-on-error: true
-      run: gcloud compute ssh $SERVICE_NAME --command="docker stop $SERVICE_NAME && docker rm $SERVICE_NAME"
-
-    - name: Cleanup docker
-      run: gcloud compute ssh $SERVICE_NAME --command="docker system prune -f -a"
+    - name: printenv
+      run: printenv
 
     - name: Create .env file
       run: |-
         touch .env
-        echo "HOST=${{ secrets.HOST }}" >> .env
-        echo "PORT=${{ secrets.PORT }}" >> .env
-        echo "SESSION_COOKIE_SECRET=${{ secrets.SESSION_COOKIE_SECRET }}" >> .env
-        echo "SESSION_COOKIE_TTL=${{ secrets.SESSION_COOKIE_TTL }}" >> .env
-        echo "DB_URI=${{ secrets.DB_URI }}" >> .env
-        echo "DB_USERNAME=${{ secrets.DB_USERNAME }}" >> .env
-        echo "DB_PASSWORD=${{ secrets.DB_PASSWORD}}" >> .env
-        echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
-        echo "REDIS_HOST=${{ secrets.REDIS_HOST }}" >> .env
-        echo "REDIS_PORT=${{ secrets.REDIS_PORT }}" >> .env
-        echo "STEAM_OPENID_IDENTIFIER=${{ secrets.STEAM_OPENID_IDENTIFIER }}" >> .env
-        echo "STEAM_OPENID_REALM=${{ secrets.STEAM_OPENID_REALM }}" >> .env
-        echo "STEAM_OPENID_RETURN_URL=${{ secrets.STEAM_OPENID_RETURN_URL }}" >> .env
-        echo "STEAM_API_URL=${{ secrets.STEAM_API_URL }}" >> .env
-        echo "STEAM_API_KEY=${{ secrets.STEAM_API_KEY }}" >> .env
-        echo "ETOP_API_URL=${{ secrets.ETOP_API_URL }}" >> .env
-        echo "ETOP_EMAIL=${{ secrets.ETOP_EMAIL }}" >> .env
-        echo "ETOP_PASSWORD=${{ secrets.ETOP_PASSWORD }}" >> .env
-        echo "ETOP_APP_ID=${{ secrets.ETOP_APP_ID }}" >> .env
-        echo "ETOP_HOT_VERSION=${{ secrets.ETOP_HOT_VERSION }}" >> .env
-
-    - name: Transfer .env file to GCE
-      run: gcloud compute scp .env $SERVICE_NAME:~
+        echo "${{ secrets.APP_ENV }}" >> .env
     
-    - name: Set access token environment variable
-      run: echo "GCP_ACCESS_TOKEN=$(gcloud auth print-access-token)" >> $GITHUB_ENV
-
-    - name: Authorize docker inside GCE
-      run: gcloud compute ssh $SERVICE_NAME --command="docker login -u oauth2accesstoken -p $GCP_ACCESS_TOKEN https://asia.gcr.io"
-    
-    - name: Pull docker image and deploy container
-      run: gcloud compute ssh $SERVICE_NAME --command="docker pull $DOCKER_IMAGE:$GITHUB_SHA && docker run -d --name=$SERVICE_NAME --expose=${{ secrets.PORT }} --restart=always --env-file=/home/runner/.env --network=host $DOCKER_IMAGE:$GITHUB_SHA"
-
-    - name: Remove .env file inside GCE
-      run: gcloud compute ssh $SERVICE_NAME --command="rm -rf /home/runner/.env"
+    # - name: Create new instance template with latest docker image
+    #   run: gcloud compute instance-templates create-with-container $SERVICE_NAME-template:${{ github.ref_name }} \
+    #    --machine-type=${{ secrets.GCP_MACHINE_TYPE }} \ 
+    #    --network-interface=subnet=${{ secrets.GCP_NETWORK_SUBNET }},no-addres \
+    #    --service-account=${{ secrets.GCP_SERVICE_ACCOUNT }}
