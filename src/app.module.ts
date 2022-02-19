@@ -11,6 +11,7 @@ import {RedisModule} from 'redis'
 import {SessionsModule} from 'sessions'
 import {SteamModule} from 'steam'
 import {UsersModule} from 'users'
+import {LogsModule} from 'logs'
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import {UsersModule} from 'users'
     SessionsModule,
     SteamModule,
     UsersModule,
+    LogsModule,
   ],
   providers: [SessionConfig],
 })
