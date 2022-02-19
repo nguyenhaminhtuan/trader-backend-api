@@ -29,7 +29,7 @@ export class AuthController {
 
     const user = await this.authService.verifyAuthenticateSteam(req.url)
     req.session.user = user
-    await this.sessionsService.createSession(user._id, req.session.id)
+    await this.sessionsService.createSession(user._id, req.session)
     return res.redirect('/')
   }
 

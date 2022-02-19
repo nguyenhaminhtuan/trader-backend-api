@@ -7,7 +7,7 @@ import {Session} from './session.model'
 import {SessionsService} from './sessions.service'
 
 @Controller('sessions')
-@Auth(UserRole.DEVELOPER, UserRole.DEVELOPER)
+@Auth(UserRole.ADMIN, UserRole.DEVELOPER)
 export class SessionsController {
   constructor(private readonly sessionService: SessionsService) {}
 

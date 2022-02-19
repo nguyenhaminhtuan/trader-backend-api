@@ -9,6 +9,7 @@ import {RedisService} from 'redis'
 import {DB} from 'database'
 import {Collection, Db, ObjectId} from 'mongodb'
 import {Session} from './session.model'
+import {SessionData, Session as ExpressSession} from 'express-session'
 
 @Injectable()
 export class SessionsService {
@@ -28,8 +29,11 @@ export class SessionsService {
     return this.collection.find().toArray()
   }
 
-  async createSession(userId: ObjectId, sessionId: string): Promise<Session> {
-    const session = new Session(userId, sessionId)
+  async createSession(
+    userId: ObjectId,
+    {id, cookie: {expires}}: ExpressSession & Partial<SessionData>
+  ): Promise<Session> {
+    const session = new Session(userId, id, expires)
     const inserted = await this.collection.insertOne(session)
 
     if (!inserted.acknowledged) {
@@ -43,7 +47,7 @@ export class SessionsService {
   async logoutSession(sessionId: string): Promise<boolean> {
     const result = await this.collection.findOneAndUpdate(
       {sessionId},
-      {$set: {active: false, logoutAt: new Date(), updatedAt: new Date()}}
+      {$set: {logoutAt: new Date(), updatedAt: new Date()}}
     )
     return !!result.ok
   }
@@ -51,19 +55,17 @@ export class SessionsService {
   async revokeSession(_id: ObjectId): Promise<boolean> {
     const result = await this.collection.findOneAndUpdate(
       {_id},
-      {$set: {active: false, updatedAt: new Date()}}
+      {$set: {updatedAt: new Date()}}
     )
 
     if (!result.ok) {
       this.logger.error({err: result.lastErrorObject}, 'Update session failed')
-      return false
     }
 
     const prefix = this.configService.get('SESSION_PREFIX')
     const sessionId = result.value.sessionId
     await this.redisService.del(`${prefix}${sessionId}`)
-    this.logger.log(`Revoke sessionId ${sessionId} successfully`)
 
-    return true
+    return !!result.ok
   }
 }
