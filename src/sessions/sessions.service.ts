@@ -6,8 +6,8 @@ import {
 } from '@nestjs/common'
 import {ConfigService, EnvironmentVariables} from 'config'
 import {RedisService} from 'redis'
-import {DB, Db} from 'database'
-import {Collection, ObjectId} from 'mongodb'
+import {DB} from 'database'
+import {Collection, Db, ObjectId} from 'mongodb'
 import {Session} from './session.model'
 
 @Injectable()
@@ -31,6 +31,7 @@ export class SessionsService {
   async createSession(userId: ObjectId, sessionId: string): Promise<Session> {
     const session = new Session(userId, sessionId)
     const inserted = await this.collection.insertOne(session)
+
     if (!inserted.acknowledged) {
       this.logger.error('Insert new session failed')
       throw new InternalServerErrorException()
@@ -52,6 +53,7 @@ export class SessionsService {
       {_id},
       {$set: {active: false, updatedAt: new Date()}}
     )
+
     if (!result.ok) {
       this.logger.error({err: result.lastErrorObject}, 'Update session failed')
       return false

@@ -2,11 +2,12 @@ import {Controller, Delete, Get, Param} from '@nestjs/common'
 import {ObjectId} from 'mongodb'
 import {Auth} from 'shared/decorators'
 import {ParseObjectIdPipe} from 'shared/pipes'
+import {UserRole} from 'users'
 import {Session} from './session.model'
 import {SessionsService} from './sessions.service'
 
 @Controller('sessions')
-@Auth()
+@Auth(UserRole.DEVELOPER, UserRole.DEVELOPER)
 export class SessionsController {
   constructor(private readonly sessionService: SessionsService) {}
 

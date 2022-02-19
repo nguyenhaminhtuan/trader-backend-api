@@ -23,6 +23,7 @@ export class AuthService {
     this.logger.debug('Verifying steam redirect')
     const {authenticated, claimedIdentifier} =
       await this.steamService.verifyOpenIdReturnUrl(url)
+
     if (!authenticated || !claimedIdentifier) {
       this.logger.error('Verify steam return url failed')
       throw new BadRequestException()
@@ -35,7 +36,6 @@ export class AuthService {
       `${this.configService.get('STEAM_OPENID_IDENTIFIER')}/id/`,
       ''
     )
-
     const {result: user} = await wrapAsync(
       this.usersService.findOrCreateUser(steamId)
     )

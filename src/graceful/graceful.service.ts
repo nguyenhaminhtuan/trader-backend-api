@@ -1,6 +1,7 @@
 import {INestApplication, Inject, Injectable, Logger} from '@nestjs/common'
 import {RedisService} from 'redis'
-import {DB_CLIENT, DbClient} from 'database'
+import {DB_CLIENT} from 'database'
+import {MongoClient} from 'mongodb'
 import closeWithGrace from 'close-with-grace'
 
 @Injectable()
@@ -8,7 +9,7 @@ export class GracefulService {
   private readonly logger = new Logger(GracefulService.name)
 
   constructor(
-    @Inject(DB_CLIENT) private readonly dbClient: DbClient,
+    @Inject(DB_CLIENT) private readonly dbClient: MongoClient,
     private readonly redisService: RedisService
   ) {}
 

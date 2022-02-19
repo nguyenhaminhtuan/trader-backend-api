@@ -1,6 +1,6 @@
 import {Inject, Injectable, Logger} from '@nestjs/common'
-import {DB, Db} from 'database'
-import {Collection} from 'mongodb'
+import {DB} from 'database'
+import {Collection, Db} from 'mongodb'
 import {User} from 'users'
 
 @Injectable()

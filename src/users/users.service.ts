@@ -4,8 +4,8 @@ import {
   InternalServerErrorException,
   Logger,
 } from '@nestjs/common'
-import {Collection, ObjectId} from 'mongodb'
-import {DB, Db} from 'database'
+import {Collection, Db, ObjectId} from 'mongodb'
+import {DB} from 'database'
 import {User} from './user.model'
 
 @Injectable()
@@ -21,6 +21,7 @@ export class UsersService {
   async findOrCreateUser(steamId: string): Promise<User> {
     this.logger.debug(`Creating user with Steam ID ${steamId}`)
     const existedUser = await this.collection.findOne({steamId})
+
     if (existedUser) {
       return existedUser
     }
@@ -28,6 +29,7 @@ export class UsersService {
     const user = new User({steamId})
     const insertResult = await this.collection.insertOne(user)
     this.logger.debug({insertResult})
+
     if (!insertResult.acknowledged) {
       this.logger.error(`Cannot insert user with Steam ID ${steamId}`)
       throw new InternalServerErrorException()
