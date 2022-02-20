@@ -19,7 +19,7 @@ async function bootstrap() {
   const host = configService.get('HOST')
   const port = configService.get('PORT')
 
-  app.set('trust proxy', 1)
+  app.set('trust proxy', true)
   app.useLogger(app.get(Logger))
   app.setGlobalPrefix('api')
   app.enableCors({origin: [], credentials: true})
