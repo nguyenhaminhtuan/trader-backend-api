@@ -95,4 +95,10 @@ export class EnvironmentVariables {
   @IsNotEmpty()
   @IsString()
   ETOP_HOT_VERSION: string
+
+  @IsNotEmpty()
+  THROTTLE_TTL = 60
+
+  @IsNotEmpty()
+  THROTTLE_LIMIT = 10
 }

@@ -1,5 +1,6 @@
 import {ValidationPipe, Logger as NestLogger} from '@nestjs/common'
 import {NestFactory} from '@nestjs/core'
+import {NestExpressApplication} from '@nestjs/platform-express'
 import {AppModule} from './app.module'
 import {ConfigService, EnvironmentVariables, SessionConfig} from 'config'
 import {Logger, loggerMiddleware} from 'logger'
@@ -9,13 +10,16 @@ import session from 'express-session'
 
 async function bootstrap() {
   const logger = new NestLogger(bootstrap.name)
-  const app = await NestFactory.create(AppModule, {bufferLogs: true})
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    bufferLogs: true,
+  })
 
   const configService =
     app.get<ConfigService<EnvironmentVariables>>(ConfigService)
   const host = configService.get('HOST')
   const port = configService.get('PORT')
 
+  app.set('trust proxy', 1)
   app.useLogger(app.get(Logger))
   app.setGlobalPrefix('api')
   app.enableCors({origin: [], credentials: true})

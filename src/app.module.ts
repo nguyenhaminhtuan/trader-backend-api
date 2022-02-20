@@ -1,4 +1,6 @@
 import {Module} from '@nestjs/common'
+import {APP_GUARD} from '@nestjs/core'
+import {RateLimitGuard} from 'shared/guards'
 import {AuthModule} from 'auth'
 import {ConfigModule, SessionConfig} from 'config'
 import {DatabaseModule} from 'database'
@@ -29,6 +31,6 @@ import {LogsModule} from 'logs'
     UsersModule,
     LogsModule,
   ],
-  providers: [SessionConfig],
+  providers: [SessionConfig, {provide: APP_GUARD, useClass: RateLimitGuard}],
 })
 export class AppModule {}
