@@ -2,7 +2,10 @@
   "name": "trader-backend-api",
   "version": "1.0.0",
   "private": true,
-  "license": "UNLICENSED",
+  "engines": {
+    "node": "~16.13.0",
+    "npm": ">=8.3"
+  },
   "scripts": {
     "prebuild": "rimraf dist",
     "build": "nest build",
