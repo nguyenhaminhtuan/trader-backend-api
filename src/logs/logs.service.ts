@@ -26,15 +26,13 @@ export class LogsService {
     sort: SortLogDto,
     q?: string
   ): Promise<Paginate<Log[]>> {
-    const count = await this.collection.countDocuments()
-    const totalPage = Math.ceil(count / page)
-
     const query: Filter<Log> = {}
 
     if (filter.level) query.level = filter.level
     if (q) query['$text'] = {$search: q, $caseSensitive: true, $language: 'en'}
 
     const cursor = this.collection.find(query)
+    const count = await cursor.count()
 
     if (sort.time) cursor.sort(['time', sort.time])
     if (sort.level) cursor.sort(['level', sort.level])
@@ -43,11 +41,7 @@ export class LogsService {
       .limit(pageSize)
       .skip((page - 1) * pageSize)
       .toArray()
-    return new Paginate({
-      count,
-      data,
-      page: {current: page, size: pageSize, total: totalPage},
-    })
+    return new Paginate(data, count, page, pageSize)
   }
 
   async getLogById(_id: ObjectId): Promise<Log> {

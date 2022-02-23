@@ -7,9 +7,13 @@ export class Paginate<T> {
     total: number
   }
 
-  constructor({count, data, page}: Paginate<T>) {
+  constructor(data: T, count: number, page: number, pageSize: number) {
     this.count = count
     this.data = data
-    this.page = page
+    this.page = {
+      current: page,
+      size: pageSize,
+      total: Math.ceil(count / page),
+    }
   }
 }
