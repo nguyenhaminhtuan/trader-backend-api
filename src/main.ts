@@ -22,7 +22,7 @@ async function bootstrap() {
   app.set('trust proxy', true)
   app.useLogger(app.get(Logger))
   app.setGlobalPrefix('api')
-  app.enableCors({origin: ['https://steamcommunity.com'], credentials: true})
+  app.enableCors({origin: [], credentials: true})
   app.useGlobalPipes(new ValidationPipe({whitelist: true}))
 
   app.use(loggerMiddleware)

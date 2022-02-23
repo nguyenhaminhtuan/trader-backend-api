@@ -1,1 +1,2 @@
-export * from './get-items-query.dto'
+export * from './filter-items.dto'
+export * from './sort-items.dto'

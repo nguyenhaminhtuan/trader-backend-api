@@ -90,10 +90,6 @@ export class EnvironmentVariables {
 
   @IsNotEmpty()
   @IsString()
-  ETOP_APP_ID: string
-
-  @IsNotEmpty()
-  @IsString()
   ETOP_HOT_VERSION: string
 
   @IsNotEmpty()

@@ -4,7 +4,7 @@ import {HttpService} from '@nestjs/axios'
 import {RedisService} from 'redis'
 import {firstValueFrom, map} from 'rxjs'
 import {EtopBag, EtopItem, EtopLogin, EtopResponse} from './etop.interfaces'
-import {GetItemsQueryDto} from './dto'
+import {FilterItemsDto, SortItemsDto} from './dto'
 import {Sort} from 'shared/enums'
 
 @Injectable()
@@ -65,25 +65,25 @@ export class EtopService {
       this.credentialsKey,
       credentials,
       'ex',
-      24 * 60 * 60
+      8 * 60 * 60
     )
   }
 
-  async getListItems(query?: GetItemsQueryDto): Promise<EtopItem[]> {
-    const cacheKey = this.getListItems.name
+  async getListItems(
+    filter: FilterItemsDto,
+    sort: SortItemsDto
+  ): Promise<EtopItem[]> {
+    const key = `${EtopService.name}-${this.getListItems.name}-${filter.game}`
+    const cache = await this.redisService.get(key)
     let items: EtopItem[] = []
-    const cache = await this.redisService.get(cacheKey)
 
     if (cache) {
       items = JSON.parse(cache) as EtopItem[]
     } else {
-      const appid = this.configService.get('ETOP_APP_ID')
-      const endpoint = `/api/user/bag/${appid}/list.do`
+      const endpoint = `/api/user/bag/${filter.game}/list.do`
       const source$ = this.httpService
         .get<EtopResponse<EtopBag>>(endpoint, {
           params: {
-            appid,
-            lang: 'en',
             page: 1,
             rows: 1000,
           },
@@ -101,17 +101,13 @@ export class EtopService {
       }
 
       items = response.datas.list
-      await this.redisService.set(cacheKey, JSON.stringify(items))
+      await this.redisService.set(key, JSON.stringify(items))
     }
 
-    if (query.sort) {
-      const {value} = query.sort
-
-      if (value) {
-        items = items.sort((a, b) =>
-          value === Sort.ASC ? a.value - b.value : b.value - a.value
-        )
-      }
+    if (sort.value) {
+      items = items.sort((a, b) =>
+        sort.value === Sort.ASC ? a.value - b.value : b.value - a.value
+      )
     }
 
     return items
