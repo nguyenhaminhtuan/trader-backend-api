@@ -1,7 +1,6 @@
 import {Controller, Delete, Get, Req, Res} from '@nestjs/common'
 import {Request, Response} from 'express'
 import {SessionsService} from 'sessions'
-import {promisify} from 'util'
 import {AuthService} from './auth.service'
 
 @Controller('auth')
@@ -40,8 +39,7 @@ export class AuthController {
     }
 
     await this.sessionsService.logoutSession(req.session.id)
-    const destroySession = promisify(req.session.destroy)
-    await destroySession()
+    req.session.user = null
     return res.redirect('/')
   }
 }
