@@ -8,7 +8,6 @@ import {EtopModule} from 'etop'
 import {GracefulModule} from 'graceful'
 import {HealthModule} from 'health'
 import {LoggerModule} from 'logger'
-import {MeModule} from 'me'
 import {RedisModule} from 'redis'
 import {SessionsModule} from 'sessions'
 import {SteamModule} from 'steam'
@@ -25,7 +24,6 @@ import {AllExceptionsFilter} from 'shared/filters'
     GracefulModule,
     HealthModule,
     LoggerModule,
-    MeModule,
     RedisModule,
     SessionsModule,
     SteamModule,

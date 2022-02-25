@@ -2,7 +2,7 @@ import {ObjectId} from 'mongodb'
 import {SteamPlayer} from 'steam'
 import {User} from 'users'
 
-export class MeDto {
+export class UserDto {
   _id: ObjectId
   name: {
     personal: string
@@ -14,8 +14,8 @@ export class MeDto {
     full: string
   }
 
-  static fromUserPlayer(user: User, player: SteamPlayer): MeDto {
-    const me = new MeDto()
+  static fromPlayer(user: User, player: SteamPlayer): UserDto {
+    const me = new UserDto()
     me._id = user._id
     me.name = {
       personal: player.personaname,
