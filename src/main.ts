@@ -2,11 +2,20 @@ import {ValidationPipe, Logger as NestLogger} from '@nestjs/common'
 import {NestFactory} from '@nestjs/core'
 import {NestExpressApplication} from '@nestjs/platform-express'
 import {AppModule} from './app.module'
-import {ConfigService, EnvironmentVariables, SessionConfig} from 'config'
+import {
+  ConfigService,
+  Environment,
+  EnvironmentVariables,
+  SessionConfig,
+} from 'config'
 import {Logger, loggerMiddleware} from 'logger'
 import {gracefulMiddleware, GracefulService} from 'graceful'
 import helmet from 'helmet'
 import session from 'express-session'
+import * as Sentry from '@sentry/node'
+import * as Tracing from '@sentry/tracing'
+import {RewriteFrames} from '@sentry/integrations'
+// import {AllExceptionsFilter} from 'shared/filters'
 
 async function bootstrap() {
   const logger = new NestLogger(bootstrap.name)
@@ -24,6 +33,25 @@ async function bootstrap() {
   app.setGlobalPrefix('api')
   app.enableCors({origin: [], credentials: true})
   app.useGlobalPipes(new ValidationPipe({whitelist: true}))
+
+  if (configService.get('NODE_ENV') === Environment.Production) {
+    Sentry.init({
+      dsn: configService.get('SENTRY_DSN'),
+      integrations: [
+        new RewriteFrames({
+          root: __dirname || process.cwd(),
+        }),
+        new Sentry.Integrations.Http({tracing: true}),
+        new Tracing.Integrations.Express({app: app as any}),
+        new Tracing.Integrations.Mongo(),
+      ],
+      tracesSampleRate: 1.0,
+      environment: configService.get('NODE_ENV'),
+    })
+
+    app.use(Sentry.Handlers.requestHandler())
+    app.use(Sentry.Handlers.tracingHandler())
+  }
 
   app.use(loggerMiddleware)
   app.use(helmet())

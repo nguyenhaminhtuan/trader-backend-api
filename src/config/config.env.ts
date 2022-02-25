@@ -93,8 +93,11 @@ export class EnvironmentVariables {
   ETOP_HOT_VERSION: string
 
   @IsNotEmpty()
-  THROTTLE_TTL = 60
+  THROTTLE_TTL = 30
 
   @IsNotEmpty()
   THROTTLE_LIMIT = 10
+
+  @IsString()
+  SENTRY_DSN: string
 }

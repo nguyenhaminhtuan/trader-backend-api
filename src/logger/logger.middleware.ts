@@ -23,7 +23,10 @@ const logger = pinoHttp({
   },
   customSuccessMessage: () => 'Request completed',
   customErrorMessage: () => 'Request error',
-  reqCustomProps: () => ({context: 'LoggerMiddleware'}),
+  reqCustomProps: (req: any) => ({
+    context: 'LoggerMiddleware',
+    sessionID: req.sessionID,
+  }),
   transport: !isProd ? prettyTransport : mongodbTransport(configService),
 })
 

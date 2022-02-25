@@ -1,5 +1,5 @@
 import {Module} from '@nestjs/common'
-import {APP_GUARD} from '@nestjs/core'
+import {APP_FILTER, APP_GUARD} from '@nestjs/core'
 import {RateLimitGuard} from 'shared/guards'
 import {AuthModule} from 'auth'
 import {ConfigModule, SessionConfig} from 'config'
@@ -14,6 +14,7 @@ import {SessionsModule} from 'sessions'
 import {SteamModule} from 'steam'
 import {UsersModule} from 'users'
 import {LogsModule} from 'logs'
+import {AllExceptionsFilter} from 'shared/filters'
 
 @Module({
   imports: [
@@ -31,6 +32,10 @@ import {LogsModule} from 'logs'
     UsersModule,
     LogsModule,
   ],
-  providers: [SessionConfig, {provide: APP_GUARD, useClass: RateLimitGuard}],
+  providers: [
+    SessionConfig,
+    {provide: APP_GUARD, useClass: RateLimitGuard},
+    {provide: APP_FILTER, useClass: AllExceptionsFilter},
+  ],
 })
 export class AppModule {}
