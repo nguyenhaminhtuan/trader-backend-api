@@ -5,8 +5,8 @@ export class BaseModel {
   createdAt: Date
   updatedAt: Date
 
-  constructor() {
-    this._id = new ObjectId()
+  constructor(_id?: ObjectId) {
+    this._id = _id ? _id : new ObjectId()
     this.createdAt = new Date()
     this.updatedAt = new Date()
   }
