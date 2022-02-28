@@ -73,12 +73,12 @@ export class EtopService {
     filter: FilterItemsDto,
     sort: SortItemsDto
   ): Promise<EtopItem[]> {
-    const key = `${EtopService.name}-${this.getListItems.name}-${filter.game}`
-    const cache = await this.redisService.get(key)
+    const key = `game:${filter.game}`
+    const cache = await this.redisService.hvals(key)
     let items: EtopItem[] = []
 
-    if (cache) {
-      items = JSON.parse(cache) as EtopItem[]
+    if (cache.length > 0) {
+      items = cache.map((c) => JSON.parse(c))
     } else {
       const endpoint = `/api/user/bag/${filter.game}/list.do`
       const source$ = this.httpService
@@ -101,7 +101,10 @@ export class EtopService {
       }
 
       items = response.datas.list
-      await this.redisService.set(key, JSON.stringify(items))
+      const itemsByKey = Object.fromEntries(
+        items.map((i) => [`item:${i.id}`, JSON.stringify(i)])
+      )
+      await this.redisService.hset(key, ...Object.entries(itemsByKey))
     }
 
     if (sort.value) {
