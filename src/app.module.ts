@@ -14,7 +14,7 @@ import {SessionsModule} from 'sessions'
 import {SteamModule} from 'steam'
 import {UsersModule} from 'users'
 import {LogsModule} from 'logs'
-import {CartModule} from 'cart'
+import {SettingsModule} from 'settings'
 
 @Module({
   imports: [
@@ -30,7 +30,7 @@ import {CartModule} from 'cart'
     SteamModule,
     UsersModule,
     LogsModule,
-    CartModule,
+    SettingsModule,
   ],
   providers: [
     SessionConfig,

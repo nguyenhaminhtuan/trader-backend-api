@@ -6,6 +6,7 @@ import {firstValueFrom, map} from 'rxjs'
 import {EtopBag, EtopItem, EtopLogin, EtopResponse} from './etop.interfaces'
 import {FilterItemsDto, SortItemsDto} from './dto'
 import {Sort} from 'shared/enums'
+import {Game} from './etop.enums'
 
 @Injectable()
 export class EtopService {
@@ -73,7 +74,7 @@ export class EtopService {
     filter: FilterItemsDto,
     sort: SortItemsDto
   ): Promise<EtopItem[]> {
-    const key = `game:${filter.game}`
+    const key = this.getCacheKey(filter.game)
     const cache = await this.redisService.hvals(key)
     let items: EtopItem[] = []
 
@@ -114,5 +115,9 @@ export class EtopService {
     }
 
     return items
+  }
+
+  getCacheKey(game: Game) {
+    return `game:${game}`
   }
 }

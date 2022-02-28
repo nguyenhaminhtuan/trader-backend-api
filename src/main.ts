@@ -15,7 +15,6 @@ import session from 'express-session'
 import * as Sentry from '@sentry/node'
 import * as Tracing from '@sentry/tracing'
 import {RewriteFrames} from '@sentry/integrations'
-// import {AllExceptionsFilter} from 'shared/filters'
 
 async function bootstrap() {
   const logger = new NestLogger(bootstrap.name)
