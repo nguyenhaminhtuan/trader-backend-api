@@ -5,11 +5,11 @@ import {CreateSettingDto} from './dto'
 import {SettingsService} from './settings.service'
 
 @Controller('setting')
-@Auth(UserRole.ADMIN, UserRole.DEVELOPER)
 export class SettingsController {
   constructor(private readonly settingsService: SettingsService) {}
 
   @Post()
+  @Auth(UserRole.ADMIN, UserRole.DEVELOPER)
   createNewSetting(
     @Body() createSettingDto: CreateSettingDto,
     @CurrentUser() user: User
