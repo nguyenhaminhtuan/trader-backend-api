@@ -93,11 +93,11 @@ export class EtopService {
       const response = await firstValueFrom(source$)
 
       if (response.type === 'error' || response.statusCode !== 200) {
-        this.logger.error(
-          new Error(
-            `Get user bag error with code ${response.code} and statusCode ${response.statusCode}`
-          )
-        )
+        this.logger.error({
+          code: response.code,
+          statusCode: response.statusCode,
+          err: response.message,
+        })
         throw new InternalServerErrorException()
       }
 
