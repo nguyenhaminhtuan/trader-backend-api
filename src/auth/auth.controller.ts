@@ -59,6 +59,6 @@ export class AuthController {
 
     await this.sessionsService.logoutSession(req.session.id)
     req.session.user = null
-    return res.redirect('/')
+    return res.status(200).json({ok: true})
   }
 }

@@ -13,8 +13,8 @@ export class SettingsController {
     return this.settingsService.getSetting()
   }
 
-  @Post('/')
   @Auth(UserRole.ADMIN, UserRole.DEVELOPER)
+  @Post('/')
   createNewSetting(
     @Body() createSettingDto: CreateSettingDto,
     @CurrentUser() user: User
