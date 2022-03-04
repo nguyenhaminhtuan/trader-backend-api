@@ -54,6 +54,10 @@ export class OrdersService {
   }
 
   async createOrder({cart}: CreateOderDto, user: User): Promise<Order> {
+    if (cart.length <= 0) {
+      throw new BadRequestException('Cart is empty')
+    }
+
     const dotaCart = cart.filter((c) => c.game === Game.DOTA)
     const csgoCart = cart.filter((c) => c.game === Game.CSGO)
 
@@ -71,7 +75,12 @@ export class OrdersService {
     const items = [...dotaItems, ...csgoItems]
     const totalValue = items.reduce((total, item) => (total += item.value), 0)
     const setting = await this.settingsService.getSetting()
+    const min = 10000
     const amount = Math.round(totalValue * setting.rate)
+
+    if (amount < min) {
+      throw new BadRequestException(`Amount must be greater than ${min}`)
+    }
 
     const orderId = new ObjectId()
     const order = new Order(orderId)
