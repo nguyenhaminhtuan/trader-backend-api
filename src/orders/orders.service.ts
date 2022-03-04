@@ -54,7 +54,7 @@ export class OrdersService {
   }
 
   getOrderDescriptionPrefix() {
-    return 'V520-'
+    return 'V520'
   }
 
   updateManyOrderStatus(orderIds: string[], status: OrderStatus) {

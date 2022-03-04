@@ -22,7 +22,7 @@ export class CassoService {
         this.logger.error(`Invalid prefix in description ${d.description}`)
         return
       }
-      const orderId = d.description.replace(prefix, '')
+      const orderId = d.description.split(' ')[0].replace(prefix, '')
       orderIds.push(orderId)
     }
     const {result, err} = await wrapAsync(
