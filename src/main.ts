@@ -30,7 +30,10 @@ async function bootstrap() {
   app.set('trust proxy', true)
   app.useLogger(app.get(Logger))
   app.setGlobalPrefix('api')
-  app.enableCors({origin: [], credentials: true})
+  app.enableCors({
+    origin: configService.get('ALLOWED_HOSTS').split(','),
+    credentials: true,
+  })
   app.useGlobalPipes(new ValidationPipe({whitelist: true}))
 
   if (configService.get('NODE_ENV') === Environment.Production) {

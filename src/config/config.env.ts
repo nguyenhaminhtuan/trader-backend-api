@@ -27,6 +27,10 @@ export class EnvironmentVariables {
   @IsString()
   DOMAIN_URL: string
 
+  @IsNotEmpty()
+  @IsString()
+  ALLOWED_HOSTS: string
+
   @IsUrl()
   STEAM_OPENID_IDENTIFIER: string
 

@@ -16,13 +16,13 @@ import {firstValueFrom, map} from 'rxjs'
 import {SettingsService} from 'settings'
 import {User} from 'users'
 import {CreateOderDto} from './dto'
-import {Order} from './oder.model'
+import {Order, OrderStatus} from './oder.model'
 import {VietQRGenerateResponse} from './vietqr.interface'
 
 @Injectable()
 export class OrdersService {
   private readonly collectionName = 'orders'
-  private readonly collection: Collection
+  private readonly collection: Collection<Order>
   private readonly logger = new Logger(OrdersService.name)
 
   constructor(
@@ -51,6 +51,17 @@ export class OrdersService {
     }
 
     return cache.map((c) => JSON.parse(c))
+  }
+
+  getOrderDescriptionPrefix() {
+    return 'V520-'
+  }
+
+  updateManyOrderStatus(orderIds: string[], status: OrderStatus) {
+    return this.collection.updateMany(
+      {_id: {$in: orderIds.map((id) => new ObjectId(id))}},
+      {$set: {status}}
+    )
   }
 
   async createOrder({cart}: CreateOderDto, user: User): Promise<Order> {
@@ -87,13 +98,14 @@ export class OrdersService {
     order.userId = user._id
     order.items = items
     order.amount = amount
+    const descPrefix = this.getOrderDescriptionPrefix()
 
     const source$ = this.httpService
       .post<VietQRGenerateResponse>('/v2/generate', {
         accountNo: +this.configService.get('BANK_ACCOUNT_NO'),
         accountName: this.configService.get('BANK_ACCOUNT_NAME'),
         acqId: +this.configService.get('VIETQR_ACB_ID'),
-        addInfo: `V520-${orderId}`,
+        addInfo: `${descPrefix}${orderId}`,
         amount,
         template: 'compact2',
       })
