@@ -3,10 +3,18 @@ import {ConfigService, EnvironmentVariables} from 'config'
 import {HttpService} from '@nestjs/axios'
 import {RedisService} from 'redis'
 import {firstValueFrom, map} from 'rxjs'
-import {EtopBag, EtopItem, EtopLogin, EtopResponse} from './etop.interfaces'
+import {
+  EtopBag,
+  EtopItem,
+  EtopLogin,
+  EtopResponse,
+  GetEtopGifts,
+  UnlockGift,
+} from './etop.interfaces'
 import {FilterItemsDto, SortItemsDto} from './dto'
 import {Sort} from 'shared/enums'
 import {Game} from './etop.enums'
+import FD from 'form-data'
 
 @Injectable()
 export class EtopService {
@@ -41,7 +49,7 @@ export class EtopService {
   }
 
   private async login(): Promise<void> {
-    this.logger.debug('Logging etopfun')
+    this.logger.debug('Start login etopfun')
     const source$ = this.httpService.get<EtopResponse<EtopLogin>>(
       this.loginEndpoint,
       {
@@ -93,19 +101,21 @@ export class EtopService {
       const response = await firstValueFrom(source$)
 
       if (response.type === 'error' || response.statusCode !== 200) {
-        this.logger.error({
-          code: response.code,
-          statusCode: response.statusCode,
-          err: response.message,
-        })
         throw new InternalServerErrorException()
       }
 
-      items = response.datas.list
-      const itemsByKey = Object.fromEntries(
-        items.map((i) => [`item:${i.id}`, JSON.stringify(i)])
-      )
-      await this.redisService.hset(key, ...Object.entries(itemsByKey))
+      items = response.datas.list.map((i) => {
+        if (!i.hasOwnProperty('locked')) {
+          i.locked = false
+        }
+        return i
+      })
+      const cacheResult = await this.setCacheItems(items, filter.game)
+
+      if (cacheResult <= 0) {
+        this.logger.error('Set cache items failed')
+        throw new InternalServerErrorException()
+      }
     }
 
     if (sort.value) {
@@ -114,10 +124,79 @@ export class EtopService {
       )
     }
 
-    return items
+    return items.filter((i) => !i.locked)
   }
 
   getCacheKey(game: Game) {
     return `game:${game}`
+  }
+
+  getCacheField(item: EtopItem) {
+    return `item:${item.id}`
+  }
+
+  async setCacheItems(items: EtopItem[], game: Game) {
+    if (items.length <= 0) {
+      return 0
+    }
+    const key = this.getCacheKey(game)
+    const itemsByKey = Object.fromEntries(
+      items.map((i) => [this.getCacheField(i), JSON.stringify(i)])
+    )
+    return this.redisService.hset(key, ...Object.entries(itemsByKey))
+  }
+
+  giftItemsByGame(items: EtopItem[], game: Game, steamId: string) {
+    const source$ = this.httpService
+      .get<EtopResponse>(`/gift/${game}/give.do`, {
+        params: {
+          qruuid: this.getRandomString(),
+          fsId: steamId,
+          ids: items.map((i) => i.id).join(','),
+          did: 355602073326716,
+        },
+      })
+      .pipe(map((res) => res.data))
+    return firstValueFrom(source$)
+  }
+
+  getEtopGifts() {
+    const source$ = this.httpService
+      .get<EtopResponse<GetEtopGifts>>('/api/user/gifts.do', {
+        params: {
+          starttime: '',
+          endtime: '',
+          category: 'give',
+        },
+      })
+      .pipe(map((res) => res.data))
+    return firstValueFrom(source$)
+  }
+
+  unLockEtopGift(giftId: string) {
+    const formData = new FD()
+    formData.append('id', giftId)
+    const source$ = this.httpService
+      .post<EtopResponse<UnlockGift>>('/api/user/gifts.do', formData, {
+        headers: formData.getHeaders(),
+      })
+      .pipe(map((res) => res.data))
+    return firstValueFrom(source$)
+  }
+
+  private getRandomString() {
+    const e = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefhijklmnopqrstuvwxyz0123456789'
+    const t = e.length
+    const o = Math.floor(89 * Math.random() + 10)
+    const n = Math.floor(89 * Math.random() + 10)
+    let i: string | number = o + n
+    i < 100 && (i = '0' + i)
+    let a = ''
+    let r = ''
+    for (let s = 0; s < 13; s++) {
+      ;(a += e.charAt(Math.floor(Math.random() * t))),
+        (r += e.charAt(Math.floor(Math.random() * t)))
+    }
+    return o + a + i + r + n
   }
 }

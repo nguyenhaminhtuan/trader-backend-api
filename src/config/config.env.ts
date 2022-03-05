@@ -65,11 +65,9 @@ export class EnvironmentVariables {
   @IsString()
   DB_URI: string
 
-  @IsNotEmpty()
   @IsString()
   DB_USERNAME: string
 
-  @IsNotEmpty()
   @IsString()
   DB_PASSWORD: string
 

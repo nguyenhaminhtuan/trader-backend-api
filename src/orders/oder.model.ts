@@ -4,7 +4,7 @@ import {EtopItem} from 'etop'
 import {QRData} from './vietqr.interface'
 
 export class Order extends BaseModel {
-  userId: ObjectId
+  userId: string
   items: EtopItem[]
   amount: number
   status: OrderStatus = OrderStatus.PENDING

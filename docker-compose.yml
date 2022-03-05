@@ -1,19 +1,35 @@
 version: '3.9'
 volumes:
-  mongo:
+  mongo1:
+  mongo2:
+  mongo3:
 services:
   cache:
-    container_name: trader_redis
-    image: redis
+    container_name: trader-redis
+    image: redis:6.2
     ports:
       - 6379:6379
-  database:
-    container_name: trader_database
+  database1:
+    container_name: trader-database-1
     image: mongo
     ports:
       - 27017:27017
-    environment:
-      - MONGO_INITDB_ROOT_USERNAME=root
-      - MONGO_INITDB_ROOT_PASSWORD=admin
     volumes:
-      - mongo:/data/db
+      - mongo1:/data/db
+    command: mongod --replSet dbrs --bind_ip_all
+  database2:
+    container_name: trader-database-2
+    image: mongo
+    ports:
+      - 27018:27017
+    volumes:
+      - mongo2:/data/db
+    command: mongod --replSet dbrs --bind_ip_all
+  database3:
+    container_name: trader-database-3
+    image: mongo
+    ports:
+      - 27019:27017
+    volumes:
+      - mongo3:/data/db
+    command: mongod --replSet dbrs --bind_ip_all

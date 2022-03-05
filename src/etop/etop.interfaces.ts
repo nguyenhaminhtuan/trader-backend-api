@@ -1,4 +1,4 @@
-export interface EtopResponse<T> {
+export interface EtopResponse<T = any> {
   code: number
   errors: string
   message: string
@@ -74,4 +74,47 @@ export interface EtopItem {
   status: {
     redlock: number
   }
+  locked: boolean
+}
+
+export interface EtopGift {
+  appid: number
+  canUnfreeze: boolean
+  createtime: number
+  flag: boolean
+  friend: string
+  friendSteamId: string
+  id: string
+  items: EtopItem[]
+  locktime: number
+  nums: number
+  remainTime: number
+  state: number
+  steamId: string
+  total: number
+  unfreezetime?: number
+  unlocktime?: number
+  user: string
+}
+
+export interface GetEtopGifts {
+  list: EtopGift[]
+  more: boolean
+  order: any
+  pager: {
+    current: number
+    pages: number
+    rp: number
+    total: number
+  }
+  resource: any
+  user: any
+}
+
+export interface UnlockGift {
+  ajaxid: any
+  callbackType: any
+  forwardUrl: any
+  navTabId: any
+  rel: any
 }

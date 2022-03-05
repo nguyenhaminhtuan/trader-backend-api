@@ -38,8 +38,8 @@ export class UsersService {
     return user
   }
 
-  getUserById(_id: ObjectId): Promise<User> {
-    return this.collection.findOne({_id})
+  getUserById(_id: string): Promise<User> {
+    return this.collection.findOne({_id: new ObjectId(_id)})
   }
 
   getUsers(): Promise<User[]> {

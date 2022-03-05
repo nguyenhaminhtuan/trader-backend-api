@@ -17,6 +17,7 @@ import {LogsModule} from 'logs'
 import {SettingsModule} from 'settings'
 import {OrdersModule} from 'orders'
 import {CassoModule} from 'casso'
+import {ScheduleModule} from '@nestjs/schedule'
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import {CassoModule} from 'casso'
     SettingsModule,
     OrdersModule,
     CassoModule,
+    ScheduleModule.forRoot(),
   ],
   providers: [
     SessionConfig,

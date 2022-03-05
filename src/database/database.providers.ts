@@ -1,5 +1,5 @@
 import {Logger, Provider} from '@nestjs/common'
-import {ConfigService, EnvironmentVariables} from 'config'
+import {ConfigService, Environment, EnvironmentVariables} from 'config'
 import {DatabaseModule} from './database.module'
 import {MongoClient} from 'mongodb'
 
@@ -14,10 +14,13 @@ export const dbClientProvider: Provider = {
   ): Promise<MongoClient> => {
     const logger = new Logger(DatabaseModule.name)
     const client = new MongoClient(configService.get('DB_URI'), {
-      auth: {
-        username: configService.get('DB_USERNAME'),
-        password: configService.get('DB_PASSWORD'),
-      },
+      auth:
+        configService.get('NODE_ENV') === Environment.Production
+          ? {
+              username: configService.get('DB_USERNAME'),
+              password: configService.get('DB_PASSWORD'),
+            }
+          : undefined,
     })
     await client.connect()
     await client.db('admin').command({ping: 1})
