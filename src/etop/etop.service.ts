@@ -135,6 +135,14 @@ export class EtopService {
     return `item:${item.id}`
   }
 
+  removeCacheItems(items: EtopItem[], game: Game) {
+    const multi = this.redisService.multi()
+    for (const item of items) {
+      multi.hdel(this.getCacheKey(game), this.getCacheField(item))
+    }
+    return multi.exec()
+  }
+
   async setCacheItems(items: EtopItem[], game: Game) {
     if (items.length <= 0) {
       return 0
@@ -164,8 +172,6 @@ export class EtopService {
     const source$ = this.httpService
       .get<EtopResponse<GetEtopGifts>>('/api/user/gifts.do', {
         params: {
-          starttime: '',
-          endtime: '',
           category: 'give',
         },
       })
@@ -177,7 +183,7 @@ export class EtopService {
     const formData = new FD()
     formData.append('id', giftId)
     const source$ = this.httpService
-      .post<EtopResponse<UnlockGift>>('/api/user/gifts.do', formData, {
+      .post<EtopResponse<UnlockGift>>('/gift/unlock.do', formData, {
         headers: formData.getHeaders(),
       })
       .pipe(map((res) => res.data))

@@ -28,14 +28,17 @@ export class CassoService {
     const prefix = this.ordersService.getOrderDescriptionPrefix()
     for (const d of data) {
       if (!d.description.startsWith(prefix)) {
-        this.logger.error(`Invalid prefix in description ${d.description}`)
+        this.logger.error(
+          {payload: d},
+          `Invalid prefix in description ${d.description}`
+        )
         return
       }
       const orderId = d.description.split(' ')[0].replace(prefix, '')
       const order = await this.ordersService.getOrderById(orderId)
 
       if (!order) {
-        this.logger.error(`Cannot find order with id ${orderId}`)
+        this.logger.error({payload: d}, `Cannot find order with id ${orderId}`)
         return
       }
 
@@ -47,19 +50,19 @@ export class CassoService {
 
       if (isNotMatchAmount || isOrderProccessed || isUserNotFound) {
         if (isNotMatchAmount) {
-          this.logger.error('Amount not match')
+          this.logger.error({payload: d}, 'Amount not match')
         }
 
         if (isOrderProccessed) {
           this.logger.error(
-            {order: {_id: order._id}},
+            {order: {_id: order._id, status: order.status}},
             `Order already proccessed`
           )
         }
 
         if (isUserNotFound) {
           this.logger.error(
-            {order},
+            {order: {_id: order._id}},
             `Cannot find user with userId ${order.userId}`
           )
         }
@@ -113,8 +116,8 @@ export class CassoService {
           }
         }
 
-        await this.etopService.setCacheItems(dotaItems, Game.DOTA)
-        await this.etopService.setCacheItems(csgoItems, Game.CSGO)
+        await this.etopService.removeCacheItems(dotaItems, Game.DOTA)
+        await this.etopService.removeCacheItems(csgoItems, Game.CSGO)
 
         await dbSession.commitTransaction()
       } catch (err) {

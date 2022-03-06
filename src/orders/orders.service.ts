@@ -51,7 +51,7 @@ export class OrdersService {
     return 'V520'
   }
 
-  getOrderById(_id: string, filter?: Filter<Order>) {
+  getOrderById(_id: string | ObjectId, filter?: Filter<Order>) {
     return this.collection.findOne({...filter, _id: new ObjectId(_id)})
   }
 
@@ -144,7 +144,7 @@ export class OrdersService {
       await dbSession.endSession()
     }
 
-    this.createOrderTimeout(order)
+    this.createOrderTimeout(order._id)
     return order
   }
 
@@ -190,30 +190,47 @@ export class OrdersService {
     await this.etopService.setCacheItems(withLockedItems, game)
   }
 
-  createOrderTimeout(order: Order) {
+  createOrderTimeout(orderId: string | ObjectId) {
+    const timeoutKey = `orderId-${orderId.toString()}`
     const callback = async () => {
+      const order = await this.getOrderById(orderId)
+
+      if (!order) {
+        this.logger.error(`Order with id ${orderId.toString()} not found`)
+        return
+      }
+
+      if (order.status !== OrderStatus.PENDING) {
+        this.logger.warn(
+          {order: {_id: order._id, status: order.status}},
+          `Order already processed`
+        )
+        return
+      }
+
       await this.collection.updateOne(
         {_id: order._id},
         {$set: {status: OrderStatus.CANCELED}}
       )
-      const dotaItems = order.items.filter(
-        (i) => i.appid.toString() === Game.DOTA
-      )
-      const csgoItems = order.items.filter(
-        (i) => i.appid.toString() === Game.CSGO
-      )
-      if (dotaItems.length > 0) {
-        await this.etopService.setCacheItems(dotaItems, Game.DOTA)
-      }
-      if (csgoItems.length > 0) {
-        await this.etopService.setCacheItems(csgoItems, Game.CSGO)
-      }
+
+      const dotaItems = order.items
+        .filter((i) => i.appid.toString() === Game.DOTA)
+        .map((i) => {
+          i.locked = false
+          return i
+        })
+      const csgoItems = order.items
+        .filter((i) => i.appid.toString() === Game.CSGO)
+        .map((i) => {
+          i.locked = false
+          return i
+        })
+
+      await this.etopService.setCacheItems(dotaItems, Game.DOTA)
+      await this.etopService.setCacheItems(csgoItems, Game.CSGO)
     }
 
-    const timeout = setTimeout(callback, 15 * 60 * 1000)
-    this.schedulerRegistry.addTimeout(
-      `orderId-${order._id.toString()}`,
-      timeout
-    )
+    const timeout = setTimeout(callback, 1 * 60 * 1000)
+    this.schedulerRegistry.addTimeout(timeoutKey, timeout)
   }
 }
