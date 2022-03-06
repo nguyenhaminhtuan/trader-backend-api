@@ -230,7 +230,7 @@ export class OrdersService {
       await this.etopService.setCacheItems(csgoItems, Game.CSGO)
     }
 
-    const timeout = setTimeout(callback, 1 * 60 * 1000)
+    const timeout = setTimeout(callback, 10 * 60 * 1000)
     this.schedulerRegistry.addTimeout(timeoutKey, timeout)
   }
 }
