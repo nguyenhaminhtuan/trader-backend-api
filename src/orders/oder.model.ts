@@ -6,8 +6,8 @@ import {QRData} from './vietqr.interface'
 export class Order extends BaseModel {
   userId: string
   amount: number
-  items: EtopItem[]
   status: OrderStatus = OrderStatus.PENDING
+  items: EtopItem[]
   qr: QRData
 
   constructor(_id: ObjectId) {

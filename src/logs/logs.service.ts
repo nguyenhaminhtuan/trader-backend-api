@@ -1,7 +1,7 @@
 import {Inject, Injectable, Logger} from '@nestjs/common'
 import {DB} from 'database'
 import {Collection, Db, Filter, ObjectId} from 'mongodb'
-import {Paginate} from 'shared/dto'
+import {PaginateDto} from 'shared/dto'
 import {FilterLogDto, SortLogDto} from './dto'
 import {Log} from './log.model'
 
@@ -25,7 +25,7 @@ export class LogsService {
     filter: FilterLogDto,
     sort: SortLogDto,
     q?: string
-  ): Promise<Paginate<Log[]>> {
+  ): Promise<PaginateDto<Log[]>> {
     const query: Filter<Log> = {}
 
     if (filter.level) query.level = filter.level
@@ -41,7 +41,7 @@ export class LogsService {
       .limit(pageSize)
       .skip((page - 1) * pageSize)
       .toArray()
-    return new Paginate(data, count, page, pageSize)
+    return new PaginateDto(data, count, page, pageSize)
   }
 
   async getLogById(_id: ObjectId): Promise<Log> {

@@ -1,4 +1,4 @@
-export class Paginate<T> {
+export class PaginateDto<T> {
   count: number
   data: T
   page: {
@@ -13,7 +13,7 @@ export class Paginate<T> {
     this.page = {
       current: page,
       size: pageSize,
-      total: Math.ceil(count / page),
+      total: Math.ceil(count / pageSize),
     }
   }
 }

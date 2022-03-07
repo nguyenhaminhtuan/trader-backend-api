@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common'
 import {ObjectId} from 'mongodb'
 import {Auth, Roles} from 'shared/decorators'
-import {Paginate} from 'shared/dto'
+import {PaginateDto} from 'shared/dto'
 import {ParseObjectIdPipe, ParsePositiveIntPipe} from 'shared/pipes'
 import {UserRole} from 'users'
 import {FilterLogDto} from './dto/filter-log.dto'
@@ -29,7 +29,7 @@ export class LogsController {
     @Query('filter', new DefaultValuePipe({})) filter: FilterLogDto,
     @Query('sort', new DefaultValuePipe({})) sort: SortLogDto,
     @Query('q') q?: string
-  ): Promise<Paginate<Log[]>> {
+  ): Promise<PaginateDto<Log[]>> {
     return this.logsService.getPaginateFilteredLogs(
       page,
       pageSize,

@@ -20,8 +20,10 @@ import {
 } from 'mongodb'
 import {firstValueFrom, map} from 'rxjs'
 import {SettingsService} from 'settings'
+import {PageDto, PaginateDto} from 'shared/dto'
 import {User} from 'users'
 import {CreateOderDto} from './dto'
+import {OrderDto} from './dto/order.dto'
 import {Order, OrderStatus} from './oder.model'
 import {VietQRGenerateResponse} from './vietqr.interface'
 
@@ -51,10 +53,29 @@ export class OrdersService {
     return this.collection.findOne({...filter, _id: new ObjectId(_id)})
   }
 
+  async getPaginateOrdersByUser(
+    page: PageDto,
+    userId: string
+  ): Promise<PaginateDto<OrderDto[]>> {
+    const count = await this.collection.countDocuments({userId})
+    const orders = await this.collection
+      .find({userId})
+      .limit(page.limit)
+      .skip(page.skip)
+      .sort('createdAt', -1)
+      .toArray()
+    return new PaginateDto(
+      OrderDto.fromOrders(orders),
+      count,
+      page.current,
+      page.size
+    )
+  }
+
   updateOrderStatus(orderId: string | ObjectId, status: OrderStatus) {
     return this.collection.updateOne(
       {_id: new ObjectId(orderId)},
-      {$set: {status}}
+      {$set: {status, updatedAt: new Date()}}
     )
   }
 
