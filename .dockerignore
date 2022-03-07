@@ -1,8 +1,9 @@
+.github
+.husky
 node_modules
-test
 .env.sample
 .eslint*
 .prettier*
 .gitignore
+.nvmrc
 docker-compose.yml
-README.md
