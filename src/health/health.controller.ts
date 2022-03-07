@@ -5,7 +5,7 @@ import {
   HealthCheck,
 } from '@nestjs/terminus'
 import {ConfigService, EnvironmentVariables} from 'config'
-import {MongoIndicator, RedisIndicator} from './indicators'
+import {MongoIndicator} from './indicators'
 
 @Controller('health')
 export class HealthController {
@@ -13,8 +13,7 @@ export class HealthController {
     private readonly configService: ConfigService<EnvironmentVariables>,
     private readonly health: HealthCheckService,
     private readonly http: HttpHealthIndicator,
-    private readonly mongoIndicator: MongoIndicator,
-    private readonly redisIndicator: RedisIndicator
+    private readonly mongoIndicator: MongoIndicator
   ) {}
 
   @Get()
@@ -29,7 +28,6 @@ export class HealthController {
           (res) => res.status === 200
         ),
       () => this.mongoIndicator.isHealthy('database'),
-      () => this.redisIndicator.isHealthy('redis'),
     ])
   }
 }

@@ -1,40 +1,48 @@
-import {Injectable, InternalServerErrorException, Logger} from '@nestjs/common'
-import {ConfigService, EnvironmentVariables} from 'config'
+import {
+  CACHE_MANAGER,
+  Inject,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common'
 import {HttpService} from '@nestjs/axios'
-import {RedisService} from 'redis'
+import {Cache} from 'cache-manager'
 import {firstValueFrom, map} from 'rxjs'
+import {ConfigService, EnvironmentVariables} from 'config'
+import {Sort} from 'shared/enums'
 import {
   EtopBag,
-  EtopItem,
   EtopLogin,
   EtopResponse,
   GetEtopGifts,
   UnlockGift,
 } from './etop.interfaces'
-import {FilterItemsDto, SortItemsDto} from './dto'
-import {Sort} from 'shared/enums'
 import {Game} from './etop.enums'
+import {EtopItem} from './etop.model'
+import {SortItemsDto} from './dto'
 import FD from 'form-data'
 
 @Injectable()
 export class EtopService {
   private readonly logger = new Logger(EtopService.name)
   private readonly credentialsKey = 'etop_credentials'
+  private readonly lockedItemsKey = 'etop_locked_items'
   private readonly loginEndpoint = '/mobile/tologin.do'
 
   constructor(
-    private readonly redisService: RedisService,
+    @Inject(CACHE_MANAGER)
+    private readonly cacheManager: Cache,
     private readonly configService: ConfigService<EnvironmentVariables>,
     private readonly httpService: HttpService
   ) {
     this.httpService.axiosRef.interceptors.request.use(
       async (config) => {
         if (config.url !== this.loginEndpoint && config.headers) {
-          let cookie = await this.redisService.get(this.credentialsKey)
+          let cookie = await this.cacheManager.get<string>(this.credentialsKey)
 
           if (!cookie) {
             await this.login()
-            cookie = await this.redisService.get(this.credentialsKey)
+            cookie = await this.cacheManager.get<string>(this.credentialsKey)
           }
 
           config.headers['Cookie'] = cookie || ''
@@ -70,53 +78,29 @@ export class EtopService {
 
     const credentials = headers['set-cookie'].join('; ')
     this.logger.debug({credentials}, 'Credentails')
-    await this.redisService.set(
-      this.credentialsKey,
-      credentials,
-      'ex',
-      8 * 60 * 60
-    )
+    await this.cacheManager.set(this.credentialsKey, credentials, {
+      ttl: 8 * 60 * 60 * 1000, // 8 hours
+    })
   }
 
-  async getListItems(
-    filter: FilterItemsDto,
-    sort: SortItemsDto
-  ): Promise<EtopItem[]> {
-    const key = this.getCacheKey(filter.game)
-    const cache = await this.redisService.hvals(key)
-    let items: EtopItem[] = []
-
-    if (cache.length > 0) {
-      items = cache.map((c) => JSON.parse(c))
-    } else {
-      const endpoint = `/api/user/bag/${filter.game}/list.do`
-      const source$ = this.httpService
-        .get<EtopResponse<EtopBag>>(endpoint, {
-          params: {
-            page: 1,
-            rows: 1000,
-          },
-        })
-        .pipe(map((res) => res.data))
-      const response = await firstValueFrom(source$)
-
-      if (response.type === 'error' || response.statusCode !== 200) {
-        throw new InternalServerErrorException()
-      }
-
-      items = response.datas.list.map((i) => {
-        if (!i.hasOwnProperty('locked')) {
-          i.locked = false
-        }
-        return i
+  async getEtopItems(game: Game, sort: SortItemsDto): Promise<EtopItem[]> {
+    const endpoint = `/api/user/bag/${game}/list.do`
+    const source$ = this.httpService
+      .get<EtopResponse<EtopBag>>(endpoint, {
+        params: {
+          page: 1,
+          rows: 1000,
+        },
       })
-      const cacheResult = await this.setCacheItems(items, filter.game)
+      .pipe(map((res) => res.data))
+    const response = await firstValueFrom(source$)
 
-      if (cacheResult <= 0) {
-        this.logger.error('Set cache items failed')
-        throw new InternalServerErrorException()
-      }
+    if (response.type === 'error' || response.statusCode !== 200) {
+      this.logger.error({payload: response}, 'Get items failed')
+      throw new InternalServerErrorException()
     }
+
+    let items = response.datas.list
 
     if (sort.value) {
       items = items.sort((a, b) =>
@@ -124,37 +108,26 @@ export class EtopService {
       )
     }
 
-    return items.filter((i) => !i.locked)
+    const lockItemIds = (await this.getLockedItemIds()) || []
+    return items.filter((item) => lockItemIds.indexOf(item.id) < 0)
   }
 
-  getCacheKey(game: Game) {
-    return `game:${game}`
+  getLockedItemIds(): Promise<number[]> {
+    return this.cacheManager.get<number[]>(this.lockedItemsKey)
   }
 
-  getCacheField(item: EtopItem) {
-    return `item:${item.id}`
+  setLockedItems(ids: number[]): Promise<number[]> {
+    return this.cacheManager.set<number[]>(this.lockedItemsKey, ids)
   }
 
-  removeCacheItems(items: EtopItem[], game: Game) {
-    const multi = this.redisService.multi()
-    for (const item of items) {
-      multi.hdel(this.getCacheKey(game), this.getCacheField(item))
-    }
-    return multi.exec()
-  }
-
-  async setCacheItems(items: EtopItem[], game: Game) {
-    if (items.length <= 0) {
-      return 0
-    }
-    const key = this.getCacheKey(game)
-    const itemsByKey = Object.fromEntries(
-      items.map((i) => [this.getCacheField(i), JSON.stringify(i)])
+  async removeLockedItems(ids: number[]): Promise<number[]> {
+    const lockItems = (await this.getLockedItemIds()) || []
+    return this.setLockedItems(
+      lockItems.filter((item) => ids.indexOf(item) < 0)
     )
-    return this.redisService.hset(key, ...Object.entries(itemsByKey))
   }
 
-  giftItemsByGame(items: EtopItem[], game: Game, steamId: string) {
+  giftEtopItems(items: EtopItem[], game: Game, steamId: string) {
     const source$ = this.httpService
       .get<EtopResponse>(`/gift/${game}/give.do`, {
         params: {
@@ -168,7 +141,7 @@ export class EtopService {
     return firstValueFrom(source$)
   }
 
-  getEtopGifts() {
+  getEtopGifts(): Promise<EtopResponse<GetEtopGifts>> {
     const source$ = this.httpService
       .get<EtopResponse<GetEtopGifts>>('/api/user/gifts.do', {
         params: {
@@ -179,7 +152,7 @@ export class EtopService {
     return firstValueFrom(source$)
   }
 
-  unLockEtopGift(giftId: string) {
+  unLockEtopGift(giftId: string): Promise<EtopResponse<UnlockGift>> {
     const formData = new FD()
     formData.append('id', giftId)
     const source$ = this.httpService
@@ -190,7 +163,7 @@ export class EtopService {
     return firstValueFrom(source$)
   }
 
-  private getRandomString() {
+  private getRandomString(): string {
     const e = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefhijklmnopqrstuvwxyz0123456789'
     const t = e.length
     const o = Math.floor(89 * Math.random() + 10)

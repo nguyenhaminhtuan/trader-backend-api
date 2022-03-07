@@ -1,10 +1,8 @@
-import {Controller, Delete, Get, Req, Res} from '@nestjs/common'
+import {Controller, Delete, Get, Req, Res, Session} from '@nestjs/common'
 import {Request, Response} from 'express'
+import {SessionData} from 'express-session'
 import {firstValueFrom} from 'rxjs'
-import {SessionsService} from 'sessions'
-import {CurrentUser} from 'shared/decorators'
 import {SteamService} from 'steam'
-import {User} from 'users'
 import {AuthService} from './auth.service'
 import {UserDto} from './dto'
 
@@ -12,16 +10,16 @@ import {UserDto} from './dto'
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
-    private readonly steamService: SteamService,
-    private readonly sessionsService: SessionsService
+    private readonly steamService: SteamService
   ) {}
 
   @Get('/user')
-  async getAuthenticationStatus(@CurrentUser() user: User) {
-    if (!user) {
+  async getAuthenticationStatus(@Session() session: SessionData) {
+    if (!session.authenticated) {
       return {authenticated: false, user: null}
     }
 
+    const user = session.user
     const players = await firstValueFrom(
       this.steamService.getPlayerSummaries(user.steamId)
     )
@@ -31,7 +29,7 @@ export class AuthController {
 
   @Get('/steam')
   async authenticateSteam(@Req() req: Request, @Res() res: Response) {
-    if (req.session.user) {
+    if (req.session.authenticated) {
       return res.redirect('/')
     }
 
@@ -41,24 +39,28 @@ export class AuthController {
 
   @Get('/steam/return')
   async verifyAuthenticateSteam(@Req() req: Request, @Res() res: Response) {
-    if (req.session.user) {
+    if (req.session.authenticated) {
       return res.redirect('/')
     }
 
     const user = await this.authService.verifyAuthenticateSteam(req.url)
+    req.session.authenticated = true
     req.session.user = user
-    await this.sessionsService.createSession(user._id, req.session)
+    req.session.loginAt = new Date()
+    req.session.logoutAt = null
+
     return res.redirect('/')
   }
 
   @Delete('/logout')
   async logOut(@Req() req: Request, @Res() res: Response) {
-    if (!req.session.user) {
+    if (!req.session.authenticated) {
       return res.redirect('/')
     }
 
-    await this.sessionsService.logoutSession(req.session.id)
-    req.session.user = null
+    req.session.authenticated = false
+    req.session.logoutAt = new Date()
+
     return res.status(200).json({ok: true})
   }
 }

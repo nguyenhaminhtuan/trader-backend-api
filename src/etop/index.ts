@@ -1,3 +1,5 @@
 export * from './etop.module'
 export * from './etop.service'
 export * from './etop.interfaces'
+export * from './etop.enums'
+export * from './etop.model'

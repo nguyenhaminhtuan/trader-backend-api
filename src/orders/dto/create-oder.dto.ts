@@ -1,20 +1,11 @@
 import {Type} from 'class-transformer'
-import {IsEnum, IsNotEmpty, IsPositive, ValidateNested} from 'class-validator'
-import {Game} from 'etop/etop.enums'
+import {ArrayMinSize, IsNotEmpty, ValidateNested} from 'class-validator'
+import {EtopItem} from 'etop'
 
 export class CreateOderDto {
   @IsNotEmpty()
-  @Type(() => Cart)
+  @ArrayMinSize(1)
+  @Type(() => EtopItem)
   @ValidateNested({each: true})
-  cart: Cart[]
-}
-
-export class Cart {
-  @IsNotEmpty()
-  @IsPositive()
-  id: number
-
-  @IsNotEmpty()
-  @IsEnum(Game)
-  game: Game
+  items: EtopItem[]
 }

@@ -1,3 +1,6 @@
+import {Game} from './etop.enums'
+import {EtopItem} from './etop.model'
+
 export interface EtopResponse<T = any> {
   code: number
   errors: string
@@ -42,43 +45,8 @@ export interface EtopBag {
   values: number
 }
 
-interface CommonProp {
-  color: string
-  name: string
-  tag: string
-}
-
-export interface EtopItem {
-  image: string
-  type_name: any
-  hero: string
-  type: any
-  imageBottomShow: CommonProp
-  quality: CommonProp
-  pop: {
-    bottom: CommonProp[]
-    topName: CommonProp
-  }
-  show_type: string
-  local_image: string
-  hero_localname: any
-  appid: number
-  name: string
-  is_custom: boolean
-  name_color: string
-  id: number
-  state: number
-  shortName: string
-  value: number
-  rarity: CommonProp
-  status: {
-    redlock: number
-  }
-  locked: boolean
-}
-
 export interface EtopGift {
-  appid: number
+  appid: Game
   canUnfreeze: boolean
   createtime: number
   flag: boolean

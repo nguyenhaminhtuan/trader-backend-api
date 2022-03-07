@@ -1,4 +1,4 @@
 export enum Game {
-  DOTA = '570',
-  CSGO = '730',
+  DOTA = 570,
+  CSGO = 730,
 }

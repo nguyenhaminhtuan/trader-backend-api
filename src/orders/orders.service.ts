@@ -9,8 +9,7 @@ import {
 import {SchedulerRegistry} from '@nestjs/schedule'
 import {ConfigService, EnvironmentVariables} from 'config'
 import {DB, DB_CLIENT} from 'database'
-import {EtopItem, EtopService} from 'etop'
-import {Game} from 'etop/etop.enums'
+import {EtopService} from 'etop'
 import {
   Collection,
   Db,
@@ -19,7 +18,6 @@ import {
   ObjectId,
   ReadPreference,
 } from 'mongodb'
-import {RedisService} from 'redis'
 import {firstValueFrom, map} from 'rxjs'
 import {SettingsService} from 'settings'
 import {User} from 'users'
@@ -35,13 +33,11 @@ export class OrdersService {
 
   constructor(
     @Inject(DB) db: Db,
-    private readonly redisService: RedisService,
+    @Inject(DB_CLIENT) private readonly dbClient: MongoClient,
+    private readonly etopSerice: EtopService,
     private readonly settingsService: SettingsService,
     private readonly httpService: HttpService,
     private readonly configService: ConfigService<EnvironmentVariables>,
-    private readonly etopService: EtopService,
-    @Inject(DB_CLIENT)
-    private readonly dbClient: MongoClient,
     private schedulerRegistry: SchedulerRegistry
   ) {
     this.collection = db.collection(this.collectionName)
@@ -62,26 +58,7 @@ export class OrdersService {
     )
   }
 
-  async createOrder({cart}: CreateOderDto, user: User): Promise<Order> {
-    if (cart.length <= 0) {
-      throw new BadRequestException('Cart is empty')
-    }
-
-    const dotaCart = cart.filter((c) => c.game === Game.DOTA)
-    const csgoCart = cart.filter((c) => c.game === Game.CSGO)
-
-    let dotaItems: EtopItem[] = []
-    let csgoItems: EtopItem[] = []
-
-    if (dotaCart.length > 0) {
-      dotaItems = await this.getItemsByGame(dotaCart, Game.DOTA)
-    }
-
-    if (csgoCart.length > 0) {
-      csgoItems = await this.getItemsByGame(csgoCart, Game.CSGO)
-    }
-
-    const items = [...dotaItems, ...csgoItems]
+  async createOrder({items}: CreateOderDto, user: User): Promise<Order> {
     const totalValue = items.reduce((total, item) => (total += item.value), 0)
     const setting = await this.settingsService.getSetting()
     const min = 10000
@@ -132,8 +109,6 @@ export class OrdersService {
         throw new Error('Insert order failed')
       }
 
-      await this.setCacheLockedItems(dotaItems, Game.DOTA)
-      await this.setCacheLockedItems(csgoItems, Game.CSGO)
       await dbSession.commitTransaction()
     } catch (err) {
       this.logger.error({err})
@@ -144,50 +119,9 @@ export class OrdersService {
       await dbSession.endSession()
     }
 
+    await this.etopSerice.setLockedItems(order.items.map((i) => i.id))
     this.createOrderTimeout(order._id)
     return order
-  }
-
-  private async getItemsByGame(
-    cart: CreateOderDto['cart'],
-    game: Game
-  ): Promise<EtopItem[]> {
-    let cache = await this.redisService.hmget(
-      this.etopService.getCacheKey(game),
-      cart.map((c) => `item:${c.id.toString()}`)
-    )
-    cache = cache.filter((c) => c)
-
-    if (cache.length < cart.length) {
-      throw new BadRequestException('Current items not contain cart item')
-    }
-
-    return cache.map((c) => {
-      const item = JSON.parse(c) as EtopItem
-      if (item.locked) {
-        throw new BadRequestException(`Item ${item.id} is locked`)
-      }
-
-      return item
-    })
-  }
-
-  private async setCacheLockedItems(items: EtopItem[], game: Game) {
-    if (items.length <= 0) {
-      return
-    }
-
-    const cacheKey = this.etopService.getCacheKey(game)
-    const itemIds = items.map((i) => i.id)
-    const cache = await this.redisService.hvals(cacheKey)
-    const serializeItems = cache.map((c) => JSON.parse(c)) as EtopItem[]
-    const withLockedItems = serializeItems.map((i) => {
-      if (itemIds.indexOf(i.id) >= 0) {
-        i.locked = true
-      }
-      return i
-    })
-    await this.etopService.setCacheItems(withLockedItems, game)
   }
 
   createOrderTimeout(orderId: string | ObjectId) {
@@ -212,25 +146,12 @@ export class OrdersService {
         {_id: order._id},
         {$set: {status: OrderStatus.CANCELED}}
       )
+      await this.etopSerice.removeLockedItems(order.items.map((i) => i.id))
 
-      const dotaItems = order.items
-        .filter((i) => i.appid.toString() === Game.DOTA)
-        .map((i) => {
-          i.locked = false
-          return i
-        })
-      const csgoItems = order.items
-        .filter((i) => i.appid.toString() === Game.CSGO)
-        .map((i) => {
-          i.locked = false
-          return i
-        })
-
-      await this.etopService.setCacheItems(dotaItems, Game.DOTA)
-      await this.etopService.setCacheItems(csgoItems, Game.CSGO)
+      this.schedulerRegistry.deleteTimeout(timeoutKey)
     }
 
-    const timeout = setTimeout(callback, 10 * 60 * 1000)
+    const timeout = setTimeout(callback, 10 * 60 * 1000) // 10 minutes
     this.schedulerRegistry.addTimeout(timeoutKey, timeout)
   }
 }

@@ -27,6 +27,14 @@ export class EnvironmentVariables {
   @IsString()
   DOMAIN_URL: string
 
+  @IsNotEmpty()
+  @IsString()
+  DB_URI: string
+
+  @IsNotEmpty()
+  @IsString()
+  SESSION_COOKIE_SECRET: string
+
   @IsUrl()
   STEAM_OPENID_IDENTIFIER: string
 
@@ -45,36 +53,6 @@ export class EnvironmentVariables {
   @IsString()
   STEAM_API_KEY: string
 
-  @IsNotEmpty()
-  @IsString()
-  SESSION_COOKIE_SECRET: string
-
-  @IsNotEmpty()
-  SESSION_COOKIE_TTL: string
-
-  SESSION_PREFIX = 'sess:'
-
-  @IsNotEmpty()
-  @IsString()
-  REDIS_HOST: string
-
-  @IsNotEmpty()
-  REDIS_PORT: string
-
-  @IsNotEmpty()
-  @IsString()
-  DB_URI: string
-
-  @IsString()
-  DB_USERNAME: string
-
-  @IsString()
-  DB_PASSWORD: string
-
-  @IsNotEmpty()
-  @IsString()
-  DB_NAME: string
-
   @IsUrl()
   ETOP_API_URL: string
 
@@ -89,12 +67,6 @@ export class EnvironmentVariables {
   @IsNotEmpty()
   @IsString()
   ETOP_HOT_VERSION: string
-
-  @IsNotEmpty()
-  THROTTLE_TTL = 30
-
-  @IsNotEmpty()
-  THROTTLE_LIMIT = 10
 
   @IsString()
   SENTRY_DSN: string

@@ -3,7 +3,6 @@ import {Module} from '@nestjs/common'
 import {ConfigModule, ConfigService, EnvironmentVariables} from 'config'
 import {DatabaseModule} from 'database'
 import {EtopModule} from 'etop'
-import {RedisModule} from 'redis'
 import {SettingsModule} from 'settings'
 import {OrdersController} from './orders.controller'
 import {OrdersService} from './orders.service'
@@ -25,7 +24,6 @@ import {OrdersService} from './orders.service'
     }),
     ConfigModule,
     EtopModule,
-    RedisModule,
   ],
   controllers: [OrdersController],
   providers: [OrdersService],

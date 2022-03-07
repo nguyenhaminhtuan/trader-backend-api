@@ -4,11 +4,6 @@ volumes:
   mongo2:
   mongo3:
 services:
-  cache:
-    container_name: trader-redis
-    image: redis:6.2
-    ports:
-      - 6379:6379
   database1:
     container_name: trader-database-1
     image: mongo

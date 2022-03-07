@@ -7,13 +7,6 @@ export const mongodbTransport = (
   target: 'pino-mongodb',
   options: {
     uri: configService.get('DB_URI'),
-    database: configService.get('DB_NAME'),
     collection: 'logs',
-    mongoOptions: {
-      auth: {
-        username: configService.get('DB_USERNAME'),
-        password: configService.get('DB_PASSWORD'),
-      },
-    },
   },
 })

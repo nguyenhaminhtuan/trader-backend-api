@@ -15,6 +15,7 @@ import session from 'express-session'
 import * as Sentry from '@sentry/node'
 import * as Tracing from '@sentry/tracing'
 import {RewriteFrames} from '@sentry/integrations'
+import {ThrottlerExceptionFilter} from 'shared/filters'
 
 async function bootstrap() {
   const logger = new NestLogger(bootstrap.name)
@@ -32,6 +33,7 @@ async function bootstrap() {
   app.setGlobalPrefix('api')
   app.enableCors({origin: [], credentials: true})
   app.useGlobalPipes(new ValidationPipe({whitelist: true}))
+  app.useGlobalFilters(new ThrottlerExceptionFilter())
 
   if (configService.get('NODE_ENV') === Environment.Production) {
     Sentry.init({

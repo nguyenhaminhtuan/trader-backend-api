@@ -13,15 +13,7 @@ export const dbClientProvider: Provider = {
     configService: ConfigService<EnvironmentVariables>
   ): Promise<MongoClient> => {
     const logger = new Logger(DatabaseModule.name)
-    const client = new MongoClient(configService.get('DB_URI'), {
-      auth:
-        configService.get('NODE_ENV') === Environment.Production
-          ? {
-              username: configService.get('DB_USERNAME'),
-              password: configService.get('DB_PASSWORD'),
-            }
-          : undefined,
-    })
+    const client = new MongoClient(configService.get('DB_URI'), {})
     await client.connect()
     await client.db('admin').command({ping: 1})
     logger.log('Database successfully connected')
@@ -31,9 +23,6 @@ export const dbClientProvider: Provider = {
 
 export const dbProvider: Provider = {
   provide: DB,
-  inject: [ConfigService, DB_CLIENT],
-  useFactory: async (
-    configService: ConfigService<EnvironmentVariables>,
-    dbClient: MongoClient
-  ) => dbClient.db(configService.get('DB_NAME')),
+  inject: [DB_CLIENT],
+  useFactory: (dbClient: MongoClient) => dbClient.db(),
 }

@@ -1,5 +1,4 @@
 import {INestApplication, Inject, Injectable, Logger} from '@nestjs/common'
-import {RedisService} from 'redis'
 import {DB_CLIENT} from 'database'
 import {MongoClient} from 'mongodb'
 import closeWithGrace, {Signals} from 'close-with-grace'
@@ -8,10 +7,7 @@ import closeWithGrace, {Signals} from 'close-with-grace'
 export class GracefulService {
   private readonly logger = new Logger(GracefulService.name)
 
-  constructor(
-    @Inject(DB_CLIENT) private readonly dbClient: MongoClient,
-    private readonly redisService: RedisService
-  ) {}
+  constructor(@Inject(DB_CLIENT) private readonly dbClient: MongoClient) {}
 
   async use(app: INestApplication, opts: {delay: number}) {
     closeWithGrace(
@@ -26,9 +22,6 @@ export class GracefulService {
         }
 
         this.logger.log('Start shutdown application gracefully')
-
-        this.redisService.disconnect(false)
-        this.logger.log('Redis disconnected')
 
         await this.dbClient.close()
         this.logger.log('Database connection closed')

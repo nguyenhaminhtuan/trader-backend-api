@@ -1,14 +1,13 @@
-import {Module} from '@nestjs/common'
+import {CacheModule, Module} from '@nestjs/common'
 import {HttpModule} from '@nestjs/axios'
 import {ConfigModule, ConfigService, EnvironmentVariables} from 'config'
-import {RedisModule} from 'redis'
 import {EtopService} from './etop.service'
 import {EtopControler} from './etop.controller'
 
 @Module({
   imports: [
     ConfigModule,
-    RedisModule,
+    CacheModule.register(),
     HttpModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

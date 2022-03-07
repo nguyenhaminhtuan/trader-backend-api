@@ -1,7 +1,6 @@
 import {Inject, Injectable, Logger} from '@nestjs/common'
 import {DB_CLIENT} from 'database'
-import {EtopItem, EtopService} from 'etop'
-import {Game} from 'etop/etop.enums'
+import {EtopItem, EtopService, Game} from 'etop'
 import {MongoClient, ObjectId, ReadPreference} from 'mongodb'
 import {OrdersService, OrderStatus} from 'orders'
 import {UsersService} from 'users'
@@ -21,36 +20,39 @@ export class CassoService {
 
   async handleWebHook({error, data}: CassoWebHookDto) {
     if (error != 0) {
-      this.logger.error({err: error})
+      this.logger.error({err: error, data})
       return
     }
 
     const prefix = this.ordersService.getOrderDescriptionPrefix()
-    for (const d of data) {
-      if (!d.description.startsWith(prefix)) {
+    for (const transaction of data) {
+      this.logger.log({transaction}, `Processing transaction`)
+
+      if (!transaction.description.startsWith(prefix)) {
         this.logger.error(
-          {payload: d},
-          `Invalid prefix in description ${d.description}`
+          {transaction},
+          `Invalid prefix in description ${transaction.description}`
         )
         return
       }
-      const orderId = d.description.split(' ')[0].replace(prefix, '')
+      const orderId = transaction.description.split(' ')[0].replace(prefix, '')
       const order = await this.ordersService.getOrderById(orderId)
+      this.logger.log(`Processing order with id ${orderId}`)
 
       if (!order) {
-        this.logger.error({payload: d}, `Cannot find order with id ${orderId}`)
+        this.logger.error({transaction}, `Cannot find order with id ${orderId}`)
         return
       }
 
       const user = await this.usersService.getUserById(order.userId)
 
-      const isNotMatchAmount = d.amount < order.amount
+      const isNotMatchAmount = transaction.amount < order.amount
       const isOrderProccessed = order.status !== OrderStatus.PENDING
       const isUserNotFound = !user
 
       if (isNotMatchAmount || isOrderProccessed || isUserNotFound) {
         if (isNotMatchAmount) {
-          this.logger.error({payload: d}, 'Amount not match')
+          this.logger.error({transaction}, 'Amount not match')
         }
 
         if (isOrderProccessed) {
@@ -79,16 +81,8 @@ export class CassoService {
       })
 
       try {
-        const dotaItems = await this.giftItemsByGame(
-          order.items,
-          Game.DOTA,
-          user.steamId
-        )
-        const csgoItems = await this.giftItemsByGame(
-          order.items,
-          Game.CSGO,
-          user.steamId
-        )
+        await this.filterAndGift(order.items, Game.DOTA, user.steamId)
+        await this.filterAndGift(order.items, Game.CSGO, user.steamId)
         const gifts = await this.etopService.getEtopGifts()
 
         if (gifts.type !== 'success') {
@@ -116,9 +110,7 @@ export class CassoService {
           }
         }
 
-        await this.etopService.removeCacheItems(dotaItems, Game.DOTA)
-        await this.etopService.removeCacheItems(csgoItems, Game.CSGO)
-
+        this.logger.log({transaction, order}, 'Payment order successfully')
         await dbSession.commitTransaction()
       } catch (err) {
         this.logger.error({err, order: {_id: order._id}})
@@ -133,24 +125,22 @@ export class CassoService {
     return
   }
 
-  private async giftItemsByGame(
+  private async filterAndGift(
     gameItems: EtopItem[],
     game: Game,
     steamId: string
   ): Promise<EtopItem[]> {
-    const items = gameItems.filter((i) => i.appid.toString() === game)
+    const items = gameItems.filter((i) => i.appid === game)
 
     if (items.length <= 0) {
-      return []
+      return
     }
 
-    const giftRes = await this.etopService.giftItemsByGame(items, game, steamId)
+    const giftRes = await this.etopService.giftEtopItems(items, game, steamId)
 
     if (giftRes.type !== 'success') {
       throw new Error(giftRes.message)
     }
-
-    return items
   }
 
   private async updateOrderFailureStatus(orderId: string | ObjectId) {
