@@ -12,7 +12,6 @@ import {HealthModule} from 'health'
 import {LoggerModule} from 'logger'
 import {SteamModule} from 'steam'
 import {UsersModule} from 'users'
-import {LogsModule} from 'logs'
 import {SettingsModule} from 'settings'
 import {OrdersModule} from 'orders'
 import {CassoModule} from 'casso'
@@ -33,7 +32,6 @@ import {CassoModule} from 'casso'
     LoggerModule,
     SteamModule,
     UsersModule,
-    LogsModule,
     SettingsModule,
     OrdersModule,
     CassoModule,
