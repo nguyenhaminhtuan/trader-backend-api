@@ -1,6 +1,7 @@
 import {HttpService} from '@nestjs/axios'
 import {
   BadRequestException,
+  ConflictException,
   Inject,
   Injectable,
   InternalServerErrorException,
@@ -22,8 +23,7 @@ import {firstValueFrom, map} from 'rxjs'
 import {SettingsService} from 'settings'
 import {PageDto, PaginateDto} from 'shared/dto'
 import {User} from 'users'
-import {CreateOderDto} from './dto'
-import {OrderDto} from './dto/order.dto'
+import {CreateOderDto, OrderDto} from './dto'
 import {Order, OrderStatus} from './oder.model'
 import {VietQRGenerateResponse} from './vietqr.interface'
 
@@ -75,11 +75,40 @@ export class OrdersService {
   updateOrderStatus(orderId: string | ObjectId, status: OrderStatus) {
     return this.collection.updateOne(
       {_id: new ObjectId(orderId)},
-      {$set: {status, updatedAt: new Date()}}
+      {$set: {status, notify: true, updatedAt: new Date()}}
     )
   }
 
+  getOrderNotifyCount(user: User) {
+    return this.collection.countDocuments({
+      userId: user._id.toString(),
+      notify: true,
+    })
+  }
+
+  async updateOrdersNotify(orderIds: string[], user: User) {
+    const result = await this.collection.updateMany(
+      {
+        _id: {$in: orderIds.map((id) => new ObjectId(id))},
+        userId: user._id.toString(),
+        notify: true,
+      },
+      {$set: {notify: false}}
+    )
+    return result.acknowledged
+  }
+
   async createOrder({items}: CreateOderDto, user: User): Promise<Order> {
+    const lockedIds = (await this.etopSerice.getLockedItemIds()) ?? []
+
+    if (lockedIds.length > 0) {
+      items.forEach((item) => {
+        if (lockedIds.indexOf(item.id) >= 0) {
+          throw new ConflictException('Some items in process')
+        }
+      })
+    }
+
     const totalValue = items.reduce((total, item) => (total += item.value), 0)
     const setting = await this.settingsService.getSetting()
     const min = 10000
@@ -163,10 +192,7 @@ export class OrdersService {
         return
       }
 
-      await this.collection.updateOne(
-        {_id: order._id},
-        {$set: {status: OrderStatus.CANCELED}}
-      )
+      await this.updateOrderStatus(order._id, OrderStatus.CANCELED)
       await this.etopSerice.removeLockedItems(order.items.map((i) => i.id))
 
       this.schedulerRegistry.deleteTimeout(timeoutKey)

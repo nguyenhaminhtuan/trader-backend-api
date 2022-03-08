@@ -5,8 +5,9 @@ import {OrderStatus, Order} from '../oder.model'
 export class OrderDto {
   _id: ObjectId
   amount: number
-  items: EtopItem[]
   status: OrderStatus
+  notify: boolean
+  items: EtopItem[]
   createdAt: Date
   updatedAt: Date
 
@@ -16,6 +17,7 @@ export class OrderDto {
       dto._id = order._id
       dto.amount = order.amount
       dto.status = order.status
+      dto.notify = order.notify
       dto.items = order.items
       dto.createdAt = order.createdAt
       dto.updatedAt = order.updatedAt

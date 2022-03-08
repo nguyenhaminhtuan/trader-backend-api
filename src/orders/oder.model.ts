@@ -9,6 +9,7 @@ export class Order extends BaseModel {
   status: OrderStatus = OrderStatus.PENDING
   items: EtopItem[]
   qr: QRData
+  notify = false
 
   constructor(_id: ObjectId) {
     super(_id)

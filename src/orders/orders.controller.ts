@@ -4,13 +4,14 @@ import {
   DefaultValuePipe,
   Get,
   Post,
+  Put,
   Query,
 } from '@nestjs/common'
 import {Auth, CurrentUser} from 'shared/decorators'
 import {PageDto} from 'shared/dto'
 import {ParsePositiveIntPipe} from 'shared/pipes'
 import {User} from 'users'
-import {CreateOderDto} from './dto'
+import {CreateOderDto, UpdateOrdersNotifyDto} from './dto'
 import {OrdersService} from './orders.service'
 
 @Controller('orders')
@@ -19,7 +20,7 @@ export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
   @Post('/')
-  async createOrder(
+  createOrder(
     @Body() createOrderDto: CreateOderDto,
     @CurrentUser() user: User
   ) {
@@ -39,5 +40,18 @@ export class OrdersController {
       new PageDto(page, pageSize),
       user._id.toString()
     )
+  }
+
+  @Get('/notify')
+  getOrderNotifyCount(@CurrentUser() user: User) {
+    return this.ordersService.getOrderNotifyCount(user)
+  }
+
+  @Put('/notify')
+  updateOrdersNotify(
+    @Body() {orderIds}: UpdateOrdersNotifyDto,
+    @CurrentUser() user: User
+  ) {
+    return this.ordersService.updateOrdersNotify(orderIds, user)
   }
 }
