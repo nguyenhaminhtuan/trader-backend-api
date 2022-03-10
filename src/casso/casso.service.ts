@@ -143,7 +143,7 @@ export class CassoService {
     }
   }
 
-  private async updateOrderFailureStatus(orderId: string | ObjectId) {
+  private async updateOrderFailureStatus(orderId: string) {
     const updatedOrder = await this.ordersService.updateOrderStatus(
       orderId,
       OrderStatus.FAILURE

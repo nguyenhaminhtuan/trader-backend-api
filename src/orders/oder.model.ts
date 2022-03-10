@@ -1,19 +1,21 @@
-import {BaseModel} from 'shared/models'
-import {ObjectId} from 'mongodb'
+import {customAlphabet as nanoidAlphabet} from 'nanoid'
 import {EtopItem} from 'etop'
 import {QRData} from './vietqr.interface'
 
-export class Order extends BaseModel {
+const alphabet =
+  '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
+const nanoid = nanoidAlphabet(alphabet, 10)
+
+export class Order {
+  _id = nanoid()
   userId: string
   amount: number
   status: OrderStatus = OrderStatus.PENDING
   items: EtopItem[]
-  qr: QRData
+  qr?: QRData
   notify = false
-
-  constructor(_id: ObjectId) {
-    super(_id)
-  }
+  createdAt = new Date()
+  updatedAt = new Date()
 }
 
 export enum OrderStatus {

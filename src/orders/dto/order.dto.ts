@@ -1,9 +1,8 @@
-import {ObjectId} from 'mongodb'
 import {EtopItem} from 'etop'
 import {OrderStatus, Order} from '../oder.model'
 
 export class OrderDto {
-  _id: ObjectId
+  _id: string
   amount: number
   status: OrderStatus
   notify: boolean

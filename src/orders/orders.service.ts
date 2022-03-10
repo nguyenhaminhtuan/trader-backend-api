@@ -1,4 +1,3 @@
-import {HttpService} from '@nestjs/axios'
 import {
   BadRequestException,
   ConflictException,
@@ -7,22 +6,16 @@ import {
   InternalServerErrorException,
   Logger,
 } from '@nestjs/common'
+import {HttpService} from '@nestjs/axios'
 import {SchedulerRegistry} from '@nestjs/schedule'
+import {Collection, Db, Filter, MongoClient, ReadPreference} from 'mongodb'
+import {firstValueFrom, map} from 'rxjs'
 import {ConfigService, EnvironmentVariables} from 'config'
 import {DB, DB_CLIENT} from 'database'
 import {EtopService} from 'etop'
-import {
-  Collection,
-  Db,
-  Filter,
-  MongoClient,
-  ObjectId,
-  ReadPreference,
-} from 'mongodb'
-import {firstValueFrom, map} from 'rxjs'
 import {SettingsService} from 'settings'
-import {PageDto, PaginateDto} from 'shared/dto'
 import {User} from 'users'
+import {PageDto, PaginateDto} from 'shared/dto'
 import {CreateOderDto, OrderDto} from './dto'
 import {Order, OrderStatus} from './oder.model'
 import {VietQRGenerateResponse} from './vietqr.interface'
@@ -49,8 +42,8 @@ export class OrdersService {
     return 'V520'
   }
 
-  getOrderById(_id: string | ObjectId, filter?: Filter<Order>) {
-    return this.collection.findOne({...filter, _id: new ObjectId(_id)})
+  getOrderById(_id: string, filter?: Filter<Order>) {
+    return this.collection.findOne({...filter, _id})
   }
 
   async getPaginateOrdersByUser(
@@ -72,9 +65,9 @@ export class OrdersService {
     )
   }
 
-  updateOrderStatus(orderId: string | ObjectId, status: OrderStatus) {
+  updateOrderStatus(_id: string, status: OrderStatus) {
     return this.collection.updateOne(
-      {_id: new ObjectId(orderId)},
+      {_id},
       {$set: {status, notify: true, updatedAt: new Date()}}
     )
   }
@@ -89,7 +82,7 @@ export class OrdersService {
   async updateOrdersNotify(orderIds: string[], user: User) {
     const result = await this.collection.updateMany(
       {
-        _id: {$in: orderIds.map((id) => new ObjectId(id))},
+        _id: {$in: orderIds},
         userId: user._id.toString(),
         notify: true,
       },
@@ -118,8 +111,7 @@ export class OrdersService {
       throw new BadRequestException(`Amount must be greater than ${min}`)
     }
 
-    const orderId = new ObjectId()
-    const order = new Order(orderId)
+    const order = new Order()
     order.userId = user._id.toString()
     order.items = items
     order.amount = amount
@@ -130,7 +122,7 @@ export class OrdersService {
         accountNo: +this.configService.get('BANK_ACCOUNT_NO'),
         accountName: this.configService.get('BANK_ACCOUNT_NAME'),
         acqId: +this.configService.get('VIETQR_ACB_ID'),
-        addInfo: `${descPrefix}${orderId}`,
+        addInfo: `${descPrefix}${order._id}`,
         amount,
         template: 'compact2',
       })
@@ -174,7 +166,7 @@ export class OrdersService {
     return order
   }
 
-  createOrderTimeout(orderId: string | ObjectId) {
+  createOrderTimeout(orderId: string) {
     const timeoutKey = `orderId-${orderId.toString()}`
     const callback = async () => {
       const order = await this.getOrderById(orderId)

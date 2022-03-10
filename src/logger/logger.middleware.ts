@@ -1,6 +1,6 @@
 import pinoHttp from 'pino-http'
 import {Request, Response, NextFunction} from 'express'
-import {v4 as uuidV4} from 'uuid'
+import {randomUUID} from 'crypto'
 import {ConfigService, Environment, EnvironmentVariables} from 'config'
 import {mongodbTransport, prettyTransport} from './transports'
 
@@ -11,7 +11,7 @@ const logger = pinoHttp({
   autoLogging: {
     ignorePaths: ['/api/health'],
   },
-  genReqId: (req) => (!isProd ? req.id : uuidV4()),
+  genReqId: () => randomUUID(),
   customLogLevel: (res, err) => {
     if (res.statusCode >= 500 || err) {
       return 'error'
