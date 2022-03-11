@@ -47,7 +47,13 @@ export class CassoController {
 
     return userInfo.data.bankAccs.map((acc) => {
       const bank = banks.data.find((b) => +b.bin === acc.bank.bin)
-      return {name: bank.name, shortName: bank.short_name, logo: bank.logo}
+      return {
+        name: bank.name,
+        shortName: bank.short_name,
+        logo: bank.logo,
+        accountNo: acc.bankSubAccId,
+        accountName: acc.bankAccountName,
+      }
     })
   }
 }
