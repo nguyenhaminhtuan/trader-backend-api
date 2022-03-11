@@ -1,9 +1,9 @@
-import {HttpModule} from '@nestjs/axios'
 import {Module} from '@nestjs/common'
-import {ConfigModule, ConfigService, EnvironmentVariables} from 'config'
+import {ConfigModule} from 'config'
 import {DatabaseModule} from 'database'
 import {EtopModule} from 'etop'
 import {SettingsModule} from 'settings'
+import {VietQRModule} from 'vietqr'
 import {OrdersController} from './orders.controller'
 import {OrdersService} from './orders.service'
 
@@ -11,19 +11,9 @@ import {OrdersService} from './orders.service'
   imports: [
     DatabaseModule,
     SettingsModule,
-    HttpModule.registerAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (configService: ConfigService<EnvironmentVariables>) => ({
-        baseURL: configService.get('VIETQR_API_URL'),
-        headers: {
-          Authorization: `Apikey ${configService.get('CASSO_API_KEY')}`,
-        },
-        timeout: 3500,
-      }),
-    }),
     ConfigModule,
     EtopModule,
+    VietQRModule,
   ],
   controllers: [OrdersController],
   providers: [OrdersService],

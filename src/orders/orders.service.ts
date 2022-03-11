@@ -6,19 +6,17 @@ import {
   InternalServerErrorException,
   Logger,
 } from '@nestjs/common'
-import {HttpService} from '@nestjs/axios'
 import {SchedulerRegistry} from '@nestjs/schedule'
 import {Collection, Db, Filter, MongoClient, ReadPreference} from 'mongodb'
-import {firstValueFrom, map} from 'rxjs'
 import {ConfigService, EnvironmentVariables} from 'config'
 import {DB, DB_CLIENT} from 'database'
 import {EtopService} from 'etop'
 import {SettingsService} from 'settings'
 import {User} from 'users'
+import {VietQRService} from 'vietqr'
 import {PageDto, PaginateDto} from 'shared/dto'
 import {CreateOderDto, OrderDto} from './dto'
 import {Order, OrderStatus} from './oder.model'
-import {VietQRGenerateResponse} from './vietqr.interface'
 
 @Injectable()
 export class OrdersService {
@@ -31,8 +29,8 @@ export class OrdersService {
     @Inject(DB_CLIENT) private readonly dbClient: MongoClient,
     private readonly etopSerice: EtopService,
     private readonly settingsService: SettingsService,
-    private readonly httpService: HttpService,
     private readonly configService: ConfigService<EnvironmentVariables>,
+    private readonly vietQRService: VietQRService,
     private schedulerRegistry: SchedulerRegistry
   ) {
     this.collection = db.collection(this.collectionName)
@@ -117,24 +115,6 @@ export class OrdersService {
     order.amount = amount
     const descPrefix = this.getOrderDescriptionPrefix()
 
-    const source$ = this.httpService
-      .post<VietQRGenerateResponse>('/v2/generate', {
-        accountNo: +this.configService.get('BANK_ACCOUNT_NO'),
-        accountName: this.configService.get('BANK_ACCOUNT_NAME'),
-        acqId: +this.configService.get('VIETQR_ACB_ID'),
-        addInfo: `${descPrefix}${order._id}`,
-        amount,
-        template: 'compact2',
-      })
-      .pipe(map((res) => res.data))
-    const response = await firstValueFrom(source$)
-
-    if (response.code !== '00') {
-      this.logger.error({payload: response}, 'Generate QR failed')
-      throw new InternalServerErrorException()
-    }
-
-    order.qr = response.data
     const dbSession = this.dbClient.startSession()
     dbSession.startTransaction({
       readPreference: ReadPreference.primary,
@@ -143,6 +123,23 @@ export class OrdersService {
     })
 
     try {
+      const qrResponse = await this.vietQRService.generateQRCode({
+        accountNo: +this.configService.get('BANK_ACCOUNT_NO'),
+        accountName: this.configService.get('BANK_ACCOUNT_NAME'),
+        acqId: +this.configService.get('VIETQR_ACB_ID'),
+        addInfo: `${descPrefix}${order._id}`,
+        amount,
+        template: 'compact2',
+      })
+
+      if (qrResponse.code !== '00') {
+        throw new Error(
+          `Generate QR failed with code: ${qrResponse.code} and description: ${qrResponse.desc}`
+        )
+      }
+
+      order.qr = qrResponse.data
+
       const result = await this.collection.insertOne(order, {
         session: dbSession,
       })
@@ -150,6 +147,9 @@ export class OrdersService {
       if (!result.acknowledged) {
         throw new Error('Insert order failed')
       }
+
+      await this.etopSerice.setLockedItems(order.items.map((i) => i.id))
+      this.createOrderTimeout(order._id)
 
       await dbSession.commitTransaction()
     } catch (err) {
@@ -161,8 +161,6 @@ export class OrdersService {
       await dbSession.endSession()
     }
 
-    await this.etopSerice.setLockedItems(order.items.map((i) => i.id))
-    this.createOrderTimeout(order._id)
     return order
   }
 

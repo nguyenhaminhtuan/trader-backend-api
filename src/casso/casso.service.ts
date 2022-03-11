@@ -1,10 +1,13 @@
 import {Inject, Injectable, Logger} from '@nestjs/common'
+import {HttpService} from '@nestjs/axios'
 import {DB_CLIENT} from 'database'
 import {EtopItem, EtopService, Game} from 'etop'
-import {MongoClient, ObjectId, ReadPreference} from 'mongodb'
+import {MongoClient, ReadPreference} from 'mongodb'
 import {OrdersService, OrderStatus} from 'orders'
 import {UsersService} from 'users'
+import {firstValueFrom, map} from 'rxjs'
 import {CassoWebHookDto} from './dto'
+import {CassoResponse, UserInfo} from './casso.interface'
 
 @Injectable()
 export class CassoService {
@@ -15,12 +18,21 @@ export class CassoService {
     @Inject(DB_CLIENT)
     private readonly dbClient: MongoClient,
     private readonly etopService: EtopService,
-    private readonly usersService: UsersService
+    private readonly usersService: UsersService,
+    private readonly httpService: HttpService
   ) {}
 
-  async handleWebHook({error, data}: CassoWebHookDto) {
+  getUserInfo(): Promise<CassoResponse<UserInfo>> {
+    const source$ = this.httpService
+      .get<CassoResponse<UserInfo>>('/v2/userInfo')
+      .pipe(map((res) => res.data))
+    return firstValueFrom(source$)
+  }
+
+  async handleWebHook(payload: CassoWebHookDto): Promise<void> {
+    const {error, data} = payload
     if (error != 0) {
-      this.logger.error({err: error, data})
+      this.logger.error({err: error, payload})
       return
     }
 

@@ -1,6 +1,5 @@
 import {customAlphabet as nanoidAlphabet} from 'nanoid'
 import {EtopItem} from 'etop'
-import {QRData} from './vietqr.interface'
 
 const alphabet =
   '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
@@ -12,7 +11,10 @@ export class Order {
   amount: number
   status: OrderStatus = OrderStatus.PENDING
   items: EtopItem[]
-  qr?: QRData
+  qr?: {
+    qrDataURL: string
+    qrCode?: unknown
+  }
   notify = false
   createdAt = new Date()
   updatedAt = new Date()
