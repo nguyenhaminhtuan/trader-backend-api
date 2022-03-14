@@ -1,7 +1,19 @@
-import {IsNotEmpty, IsPositive} from 'class-validator'
+import {Type} from 'class-transformer'
+import {IsNotEmpty, IsPositive, ValidateNested} from 'class-validator'
 
-export class CreateSettingDto {
+class SettingRate {
   @IsNotEmpty()
   @IsPositive()
-  rate: number
+  dota: number
+
+  @IsNotEmpty()
+  @IsPositive()
+  csgo: number
+}
+
+export class CreateSettingDto {
+  @Type(() => SettingRate)
+  @IsNotEmpty()
+  @ValidateNested()
+  rate: SettingRate
 }

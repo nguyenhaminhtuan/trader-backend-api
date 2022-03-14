@@ -1,16 +1,17 @@
 import {
   BadRequestException,
   ConflictException,
+  forwardRef,
   Inject,
   Injectable,
   InternalServerErrorException,
   Logger,
+  NotFoundException,
 } from '@nestjs/common'
 import {SchedulerRegistry} from '@nestjs/schedule'
 import {Collection, Db, Filter, MongoClient, ReadPreference} from 'mongodb'
-import {ConfigService, EnvironmentVariables} from 'config'
 import {DB, DB_CLIENT} from 'database'
-import {EtopService} from 'etop'
+import {EtopService, Game} from 'etop'
 import {SettingsService} from 'settings'
 import {User} from 'users'
 import {VietQRService} from 'vietqr'
@@ -26,10 +27,11 @@ export class OrdersService {
 
   constructor(
     @Inject(DB) db: Db,
-    @Inject(DB_CLIENT) private readonly dbClient: MongoClient,
-    private readonly etopSerice: EtopService,
+    @Inject(DB_CLIENT)
+    private readonly dbClient: MongoClient,
+    @Inject(forwardRef(() => SettingsService))
     private readonly settingsService: SettingsService,
-    private readonly configService: ConfigService<EnvironmentVariables>,
+    private readonly etopSerice: EtopService,
     private readonly vietQRService: VietQRService,
     private schedulerRegistry: SchedulerRegistry
   ) {
@@ -100,10 +102,19 @@ export class OrdersService {
       })
     }
 
-    const totalValue = items.reduce((total, item) => (total += item.value), 0)
+    const totalDotaValue = items.reduce(
+      (total, item) => item.appid === Game.DOTA && (total += item.value),
+      0
+    )
+    const totalCsgoValue = items.reduce(
+      (total, item) => item.appid === Game.CSGO && (total += item.value),
+      0
+    )
     const setting = await this.settingsService.getSetting()
     const min = 10000
-    const amount = Math.round(totalValue * setting.rate)
+    const amount = Math.round(
+      totalDotaValue * setting.rate.dota + totalCsgoValue * setting.rate.csgo
+    )
 
     if (amount < min) {
       throw new BadRequestException(`Amount must be greater than ${min}`)
@@ -113,7 +124,6 @@ export class OrdersService {
     order.userId = user._id.toString()
     order.items = items
     order.amount = amount
-    const descPrefix = this.getOrderDescriptionPrefix()
 
     const dbSession = this.dbClient.startSession()
     dbSession.startTransaction({
@@ -123,23 +133,6 @@ export class OrdersService {
     })
 
     try {
-      const qrResponse = await this.vietQRService.generateQRCode({
-        accountNo: +this.configService.get('BANK_ACCOUNT_NO'),
-        accountName: this.configService.get('BANK_ACCOUNT_NAME'),
-        acqId: +this.configService.get('VIETQR_ACB_ID'),
-        addInfo: `${descPrefix}${order._id}`,
-        amount,
-        template: 'compact2',
-      })
-
-      if (qrResponse.code !== '00') {
-        throw new Error(
-          `Generate QR failed with code: ${qrResponse.code} and description: ${qrResponse.desc}`
-        )
-      }
-
-      order.qr = qrResponse.data
-
       const result = await this.collection.insertOne(order, {
         session: dbSession,
       })
@@ -190,5 +183,41 @@ export class OrdersService {
 
     const timeout = setTimeout(callback, 10 * 60 * 1000) // 10 minutes
     this.schedulerRegistry.addTimeout(timeoutKey, timeout)
+  }
+
+  async creatOrderQR(orderId: string, bankBin: number) {
+    const order = await this.collection.findOne({_id: orderId})
+
+    if (!order) {
+      throw new NotFoundException('Order not found')
+    }
+
+    if (order.status !== OrderStatus.PENDING) {
+      throw new ConflictException('Order already processed')
+    }
+
+    const banks = await this.settingsService.getBankAccounts()
+    const bank = banks.find((b) => b.bin === bankBin)
+
+    if (!bank) {
+      throw new NotFoundException('Bank not found')
+    }
+
+    const prefix = this.getOrderDescriptionPrefix()
+    const qr = await this.vietQRService.generateQRCode({
+      accountNo: +bank.accountNo,
+      accountName: bank.accountName,
+      acqId: bank.bin,
+      addInfo: `${prefix}${order._id}`,
+      amount: order.amount,
+      template: 'compact2',
+    })
+
+    if (qr.code !== '00') {
+      this.logger.error({payload: qr}, 'Generate QR failed')
+      throw new InternalServerErrorException()
+    }
+
+    return qr.data
   }
 }

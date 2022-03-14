@@ -77,10 +77,6 @@ export class EnvironmentVariables {
 
   @IsNotEmpty()
   @IsString()
-  VIETQR_ACB_ID: string
-
-  @IsNotEmpty()
-  @IsString()
   CASSO_API_URL: string
 
   @IsNotEmpty()
@@ -90,12 +86,4 @@ export class EnvironmentVariables {
   @IsNotEmpty()
   @IsString()
   CASSO_API_SECRET: string
-
-  @IsNotEmpty()
-  @IsString()
-  BANK_ACCOUNT_NO: string
-
-  @IsNotEmpty()
-  @IsString()
-  BANK_ACCOUNT_NAME: string
 }

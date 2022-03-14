@@ -5,7 +5,6 @@ import {DatabaseModule} from 'database'
 import {EtopModule} from 'etop'
 import {OrdersModule} from 'orders'
 import {UsersModule} from 'users'
-import {VietQRModule} from 'vietqr'
 import {CassoController} from './casso.controller'
 import {CassoService} from './casso.service'
 
@@ -16,7 +15,6 @@ import {CassoService} from './casso.service'
     DatabaseModule,
     EtopModule,
     UsersModule,
-    VietQRModule,
     HttpModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

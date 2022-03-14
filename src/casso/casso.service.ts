@@ -14,9 +14,9 @@ export class CassoService {
   private readonly logger = new Logger(CassoService.name)
 
   constructor(
-    private readonly ordersService: OrdersService,
     @Inject(DB_CLIENT)
     private readonly dbClient: MongoClient,
+    private readonly ordersService: OrdersService,
     private readonly etopService: EtopService,
     private readonly usersService: UsersService,
     private readonly httpService: HttpService

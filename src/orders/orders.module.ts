@@ -1,17 +1,17 @@
-import {Module} from '@nestjs/common'
+import {forwardRef, Module} from '@nestjs/common'
 import {ConfigModule} from 'config'
 import {DatabaseModule} from 'database'
-import {EtopModule} from 'etop'
 import {SettingsModule} from 'settings'
+import {EtopModule} from 'etop'
 import {VietQRModule} from 'vietqr'
 import {OrdersController} from './orders.controller'
 import {OrdersService} from './orders.service'
 
 @Module({
   imports: [
-    DatabaseModule,
-    SettingsModule,
     ConfigModule,
+    DatabaseModule,
+    forwardRef(() => SettingsModule),
     EtopModule,
     VietQRModule,
   ],

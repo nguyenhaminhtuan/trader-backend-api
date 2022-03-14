@@ -13,12 +13,18 @@ export class SettingsController {
     return this.settingsService.getSetting()
   }
 
-  @Auth(UserRole.ADMIN, UserRole.DEVELOPER)
   @Post('/')
+  @Auth(UserRole.ADMIN, UserRole.DEVELOPER)
   createNewSetting(
     @Body() createSettingDto: CreateSettingDto,
     @CurrentUser() user: User
   ) {
     return this.settingsService.createSetting(createSettingDto, user)
+  }
+
+  @Get('/accounts')
+  @Auth()
+  getBankAccounts() {
+    return this.settingsService.getBankAccounts()
   }
 }

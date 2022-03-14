@@ -3,6 +3,7 @@ import {
   Controller,
   DefaultValuePipe,
   Get,
+  Param,
   Post,
   Put,
   Query,
@@ -53,5 +54,13 @@ export class OrdersController {
     @CurrentUser() user: User
   ) {
     return this.ordersService.updateOrdersNotify(orderIds, user)
+  }
+
+  @Post('/:orderId/qr')
+  createOrderQR(
+    @Param('orderId') orderId: string,
+    @Body('bankBin', ParsePositiveIntPipe) bankBin: number
+  ) {
+    return this.ordersService.creatOrderQR(orderId, bankBin)
   }
 }
