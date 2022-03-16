@@ -5,6 +5,7 @@ import {
   IsNumber,
   IsString,
   IsUrl,
+  Length,
 } from 'class-validator'
 
 export enum Environment {
@@ -86,4 +87,12 @@ export class EnvironmentVariables {
   @IsNotEmpty()
   @IsString()
   CASSO_API_SECRET: string
+
+  @IsNotEmpty()
+  @IsString()
+  CIPHER_KEY: string
+
+  @IsNotEmpty()
+  @IsString()
+  CIPHER_IV: string
 }

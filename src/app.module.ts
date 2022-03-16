@@ -15,6 +15,7 @@ import {UsersModule} from 'users'
 import {SettingsModule} from 'settings'
 import {OrdersModule} from 'orders'
 import {CassoModule} from 'casso'
+import {GiftsModule} from 'gifts'
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import {CassoModule} from 'casso'
     SettingsModule,
     OrdersModule,
     CassoModule,
+    GiftsModule,
   ],
   providers: [
     SessionConfig,
