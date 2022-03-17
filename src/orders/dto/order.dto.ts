@@ -1,4 +1,5 @@
 import {EtopItem} from 'etop'
+import {Gift} from 'gifts'
 import {OrderStatus, Order} from '../oder.model'
 
 export class OrderDto {
@@ -7,6 +8,7 @@ export class OrderDto {
   status: OrderStatus
   notify: boolean
   items: EtopItem[]
+  gifts: Gift[]
   createdAt: Date
   updatedAt: Date
 
@@ -18,6 +20,7 @@ export class OrderDto {
       dto.status = order.status
       dto.notify = order.notify
       dto.items = order.items
+      dto.gifts = order.gifts as Gift[]
       dto.createdAt = order.createdAt
       dto.updatedAt = order.updatedAt
       return dto

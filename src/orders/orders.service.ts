@@ -11,10 +11,12 @@ import {
 import {SchedulerRegistry} from '@nestjs/schedule'
 import {Collection, Db, Filter, MongoClient, ReadPreference} from 'mongodb'
 import {DB, DB_CLIENT} from 'database'
-import {EtopService, Game} from 'etop'
+import {EtopItem, EtopService, Game} from 'etop'
 import {SettingsService} from 'settings'
 import {User} from 'users'
 import {VietQRService} from 'vietqr'
+import {GiftsService} from 'gifts'
+import {GiftDto} from 'gifts/dto'
 import {PageDto, PaginateDto} from 'shared/dto'
 import {CreateOderDto, OrderDto} from './dto'
 import {Order, OrderStatus} from './oder.model'
@@ -32,6 +34,7 @@ export class OrdersService {
     @Inject(forwardRef(() => SettingsService))
     private readonly settingsService: SettingsService,
     private readonly etopSerice: EtopService,
+    private readonly giftsService: GiftsService,
     private readonly vietQRService: VietQRService,
     private schedulerRegistry: SchedulerRegistry
   ) {
@@ -91,30 +94,59 @@ export class OrdersService {
     return result.acknowledged
   }
 
-  async createOrder({items}: CreateOderDto, user: User): Promise<Order> {
-    const lockedIds = (await this.etopSerice.getLockedItemIds()) ?? []
+  async createOrder(
+    {itemIds, giftIds}: CreateOderDto,
+    user: User
+  ): Promise<Order> {
+    if (itemIds.length + giftIds.length <= 0) {
+      throw new BadRequestException('Cart is empty')
+    }
 
-    if (lockedIds.length > 0) {
-      items.forEach((item) => {
-        if (lockedIds.indexOf(item.id) >= 0) {
-          throw new ConflictException('Some items in process')
+    const items: EtopItem[] = []
+    let gifts: GiftDto[] = []
+
+    if (itemIds.length > 0) {
+      const dotaItems = await this.etopSerice.getEtopItems(Game.DOTA)
+      const csgoItems = await this.etopSerice.getEtopItems(Game.CSGO)
+      const allItems = [...dotaItems, ...csgoItems]
+      itemIds.forEach((id) => {
+        const existsItem = allItems.find((i) => i.id === id)
+        if (existsItem) {
+          items.push(existsItem)
         }
       })
+      if (items.length !== itemIds.length) {
+        throw new ConflictException('Some items are processing')
+      }
+    }
+
+    if (giftIds.length > 0) {
+      gifts = await this.giftsService.getGiftsById(giftIds)
+      if (gifts.length !== giftIds.length) {
+        throw new ConflictException('Some gifts are processing')
+      }
     }
 
     const totalDotaValue = items.reduce(
-      (total, item) => item.appid === Game.DOTA && (total += item.value),
+      (total, item) =>
+        item.appid === Game.DOTA ? (total += item.value) : total,
       0
     )
     const totalCsgoValue = items.reduce(
-      (total, item) => item.appid === Game.CSGO && (total += item.value),
+      (total, item) =>
+        item.appid === Game.CSGO ? (total += item.value) : total,
       0
     )
-    const setting = await this.settingsService.getSetting()
-    const min = 10000
-    const amount = Math.round(
-      totalDotaValue * setting.rate.dota + totalCsgoValue * setting.rate.csgo
+    const totalGiftsPrice = gifts.reduce(
+      (total, gift) => (total += gift.price),
+      0
     )
+
+    const {rate} = await this.settingsService.getSetting()
+    const min = 10000
+    const amount =
+      Math.round(totalDotaValue * rate.dota + totalCsgoValue * rate.csgo) +
+      totalGiftsPrice
 
     if (amount < min) {
       throw new BadRequestException(`Amount must be greater than ${min}`)
@@ -123,6 +155,7 @@ export class OrdersService {
     const order = new Order()
     order.userId = user._id.toString()
     order.items = items
+    order.gifts = gifts
     order.amount = amount
 
     const dbSession = this.dbClient.startSession()
@@ -141,7 +174,10 @@ export class OrdersService {
         throw new Error('Insert order failed')
       }
 
-      await this.etopSerice.setLockedItems(order.items.map((i) => i.id))
+      await this.etopSerice.setLockedItems(items.map((i) => i.id))
+      await this.giftsService.setLockedGifts(
+        gifts.map((gift) => gift._id.toString())
+      )
       this.createOrderTimeout(order._id)
 
       await dbSession.commitTransaction()
@@ -177,6 +213,9 @@ export class OrdersService {
 
       await this.updateOrderStatus(order._id, OrderStatus.CANCELED)
       await this.etopSerice.removeLockedItems(order.items.map((i) => i.id))
+      await this.giftsService.removeLockedItems(
+        order.gifts.map((gift: GiftDto) => gift._id.toString())
+      )
 
       this.schedulerRegistry.deleteTimeout(timeoutKey)
     }

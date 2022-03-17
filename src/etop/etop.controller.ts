@@ -1,12 +1,10 @@
 import {
   Controller,
-  DefaultValuePipe,
   Get,
   ParseEnumPipe,
   ParseIntPipe,
   Query,
 } from '@nestjs/common'
-import {SortItemsDto} from './dto'
 import {Game} from './etop.enums'
 import {EtopItem} from './etop.model'
 import {EtopService} from './etop.service'
@@ -17,9 +15,8 @@ export class EtopControler {
 
   @Get('/items')
   getEtopItems(
-    @Query('game', ParseIntPipe, new ParseEnumPipe(Game)) game: Game,
-    @Query('sort', new DefaultValuePipe({})) sort: SortItemsDto
+    @Query('game', ParseIntPipe, new ParseEnumPipe(Game)) game: Game
   ): Promise<EtopItem[]> {
-    return this.etopService.getEtopItems(game, sort)
+    return this.etopService.getEtopItems(game)
   }
 }

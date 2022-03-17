@@ -1,11 +1,15 @@
-import {Type} from 'class-transformer'
-import {ArrayMinSize, IsNotEmpty, ValidateNested} from 'class-validator'
-import {EtopItem} from 'etop'
+import {IsArray, IsNotEmpty, IsPositive} from 'class-validator'
+import {ObjectId} from 'mongodb'
+import {IsObjectId} from 'shared/decorators'
 
 export class CreateOderDto {
   @IsNotEmpty()
-  @ArrayMinSize(1)
-  @Type(() => EtopItem)
-  @ValidateNested({each: true})
-  items: EtopItem[]
+  @IsArray()
+  @IsPositive({each: true})
+  itemIds: number[]
+
+  @IsNotEmpty()
+  @IsArray()
+  @IsObjectId({each: true})
+  giftIds: ObjectId[]
 }

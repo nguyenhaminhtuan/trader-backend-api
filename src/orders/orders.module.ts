@@ -3,6 +3,7 @@ import {ConfigModule} from 'config'
 import {DatabaseModule} from 'database'
 import {SettingsModule} from 'settings'
 import {EtopModule} from 'etop'
+import {GiftsModule} from 'gifts'
 import {VietQRModule} from 'vietqr'
 import {OrdersController} from './orders.controller'
 import {OrdersService} from './orders.service'
@@ -13,6 +14,7 @@ import {OrdersService} from './orders.service'
     DatabaseModule,
     forwardRef(() => SettingsModule),
     EtopModule,
+    GiftsModule,
     VietQRModule,
   ],
   controllers: [OrdersController],

@@ -9,7 +9,6 @@ import {HttpService} from '@nestjs/axios'
 import {Cache} from 'cache-manager'
 import {firstValueFrom, map} from 'rxjs'
 import {ConfigService, EnvironmentVariables} from 'config'
-import {Sort} from 'shared/enums'
 import {
   EtopBag,
   EtopLogin,
@@ -19,7 +18,6 @@ import {
 } from './etop.interfaces'
 import {Game} from './etop.enums'
 import {EtopItem} from './etop.model'
-import {SortItemsDto} from './dto'
 import FD from 'form-data'
 
 @Injectable()
@@ -83,7 +81,7 @@ export class EtopService {
     })
   }
 
-  async getEtopItems(game: Game, sort: SortItemsDto): Promise<EtopItem[]> {
+  async getEtopItems(game: Game): Promise<EtopItem[]> {
     const endpoint = `/api/user/bag/${game}/list.do`
     const source$ = this.httpService
       .get<EtopResponse<EtopBag>>(endpoint, {
@@ -100,15 +98,8 @@ export class EtopService {
       throw new InternalServerErrorException()
     }
 
-    let items = response.datas.list
-
-    if (sort.value) {
-      items = items.sort((a, b) =>
-        sort.value === Sort.ASC ? a.value - b.value : b.value - a.value
-      )
-    }
-
-    const lockItemIds = (await this.getLockedItemIds()) || []
+    const items = response.datas.list
+    const lockItemIds = (await this.getLockedItemIds()) ?? []
     return items.filter((item) => lockItemIds.indexOf(item.id) < 0)
   }
 
@@ -116,8 +107,13 @@ export class EtopService {
     return this.cacheManager.get<number[]>(this.lockedItemsKey)
   }
 
-  setLockedItems(ids: number[]): Promise<number[]> {
-    return this.cacheManager.set<number[]>(this.lockedItemsKey, ids)
+  async setLockedItems(ids: number[]): Promise<number[]> {
+    const lockItemIds = (await this.getLockedItemIds()) ?? []
+    return this.cacheManager.set<number[]>(
+      this.lockedItemsKey,
+      [...new Set([...lockItemIds, ...ids])],
+      {ttl: 10 * 60}
+    )
   }
 
   async removeLockedItems(ids: number[]): Promise<number[]> {

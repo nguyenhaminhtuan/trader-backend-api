@@ -1,13 +1,15 @@
 import {
+  CACHE_MANAGER,
   ConflictException,
   Inject,
   Injectable,
   InternalServerErrorException,
   Logger,
 } from '@nestjs/common'
-import {createCipheriv, createDecipheriv} from 'crypto'
-import {Collection, Db} from 'mongodb'
 import {DB} from 'database'
+import {Cache} from 'cache-manager'
+import {Collection, Db, ObjectId} from 'mongodb'
+import {createCipheriv, createDecipheriv} from 'crypto'
 import {ConfigService, EnvironmentVariables} from 'config'
 import {Gift} from './gift.model'
 import {CreateGiftDto, GiftDto} from './dto'
@@ -18,8 +20,11 @@ export class GiftsService {
   private readonly giftCollection: Collection<Gift>
   private readonly cipherKey: Buffer
   private readonly cipherIV: Buffer
+  private readonly lockedGiftsKey = 'locked_gifts'
 
   constructor(
+    @Inject(CACHE_MANAGER)
+    private readonly cacheManager: Cache,
     @Inject(DB) db: Db,
     configService: ConfigService<EnvironmentVariables>
   ) {
@@ -46,8 +51,27 @@ export class GiftsService {
   }
 
   async getAllGifts(): Promise<GiftDto[]> {
-    const gifts = await this.giftCollection.find().sort('value', 1).toArray()
-    return gifts.map((gift) => GiftDto.fromGift(gift))
+    const gifts = await this.giftCollection
+      .find({active: false})
+      .sort('value', 1)
+      .toArray()
+    const lockGiftIds = (await this.getLockedGiftIds()) ?? []
+    return gifts
+      .map((gift) => GiftDto.fromGift(gift))
+      .filter((gift) => lockGiftIds.indexOf(gift._id.toString()) < 0)
+  }
+
+  async getGiftsById(ids: string[] | ObjectId[]) {
+    const gifts = await this.giftCollection
+      .find({
+        _id: {$in: ids.map((id: string | ObjectId) => new ObjectId(id))},
+        active: false,
+      })
+      .toArray()
+    const lockGiftIds = (await this.getLockedGiftIds()) ?? []
+    return gifts
+      .map((gift) => GiftDto.fromGift(gift))
+      .filter((gift) => lockGiftIds.indexOf(gift._id.toString()) < 0)
   }
 
   async createGift(dto: CreateGiftDto): Promise<Gift> {
@@ -68,5 +92,25 @@ export class GiftsService {
     }
 
     return gift
+  }
+
+  getLockedGiftIds(): Promise<string[]> {
+    return this.cacheManager.get<string[]>(this.lockedGiftsKey)
+  }
+
+  async setLockedGifts(ids: string[]): Promise<string[]> {
+    const lockGifts = (await this.getLockedGiftIds()) ?? []
+    return this.cacheManager.set<string[]>(
+      this.lockedGiftsKey,
+      [...new Set([...lockGifts, ...ids])],
+      {ttl: 10 * 60}
+    )
+  }
+
+  async removeLockedItems(ids: string[]): Promise<string[]> {
+    const lockGifts = (await this.getLockedGiftIds()) ?? []
+    return this.setLockedGifts(
+      lockGifts.filter((item) => ids.indexOf(item) < 0)
+    )
   }
 }
