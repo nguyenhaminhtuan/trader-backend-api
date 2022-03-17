@@ -15,11 +15,11 @@ import {EtopItem, EtopService, Game} from 'etop'
 import {SettingsService} from 'settings'
 import {User} from 'users'
 import {VietQRService} from 'vietqr'
-import {GiftsService} from 'gifts'
-import {GiftDto} from 'gifts/dto'
+import {Gift, GiftsService} from 'gifts'
 import {PageDto, PaginateDto} from 'shared/dto'
 import {CreateOderDto, OrderDto} from './dto'
 import {Order, OrderStatus} from './oder.model'
+import {GiftDto} from 'gifts/dto'
 
 @Injectable()
 export class OrdersService {
@@ -60,12 +60,19 @@ export class OrdersService {
       .skip(page.skip)
       .sort('createdAt', -1)
       .toArray()
-    return new PaginateDto(
-      OrderDto.fromOrders(orders),
-      count,
-      page.current,
-      page.size
-    )
+    const dto = orders.map((order) => {
+      if (order.status === OrderStatus.SUCCESS) {
+        order.gifts = order.gifts.map((gift) =>
+          GiftDto.fromGift(gift, this.giftsService.decryptCode(gift.code))
+        ) as Gift[]
+      } else {
+        order.gifts = order.gifts.map((gift) =>
+          GiftDto.fromGift(gift)
+        ) as Gift[]
+      }
+      return OrderDto.fromOrder(order)
+    })
+    return new PaginateDto(dto, count, page.current, page.size)
   }
 
   updateOrderStatus(_id: string, status: OrderStatus) {
@@ -103,7 +110,7 @@ export class OrdersService {
     }
 
     const items: EtopItem[] = []
-    let gifts: GiftDto[] = []
+    let gifts: Gift[] = []
 
     if (itemIds.length > 0) {
       const dotaItems = await this.etopSerice.getEtopItems(Game.DOTA)
@@ -121,7 +128,7 @@ export class OrdersService {
     }
 
     if (giftIds.length > 0) {
-      gifts = await this.giftsService.getGiftsById(giftIds)
+      gifts = await this.giftsService.getActiveGiftsByIds(giftIds)
       if (gifts.length !== giftIds.length) {
         throw new ConflictException('Some gifts are processing')
       }
@@ -190,7 +197,10 @@ export class OrdersService {
       await dbSession.endSession()
     }
 
-    return order
+    return {
+      ...order,
+      gifts: order.gifts.map((gift) => GiftDto.fromGift(gift)) as Gift[],
+    }
   }
 
   createOrderTimeout(orderId: string) {
@@ -214,7 +224,7 @@ export class OrdersService {
       await this.updateOrderStatus(order._id, OrderStatus.CANCELED)
       await this.etopSerice.removeLockedItems(order.items.map((i) => i.id))
       await this.giftsService.removeLockedItems(
-        order.gifts.map((gift: GiftDto) => gift._id.toString())
+        order.gifts.map((gift) => gift._id.toString())
       )
 
       this.schedulerRegistry.deleteTimeout(timeoutKey)

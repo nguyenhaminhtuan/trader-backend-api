@@ -1,11 +1,13 @@
 import {Inject, Injectable, Logger} from '@nestjs/common'
 import {HttpService} from '@nestjs/axios'
+import {MongoClient, ReadPreference} from 'mongodb'
 import {DB_CLIENT} from 'database'
 import {EtopItem, EtopService, Game} from 'etop'
-import {MongoClient, ReadPreference} from 'mongodb'
+import {Gift, GiftsService} from 'gifts'
 import {OrdersService, OrderStatus} from 'orders'
 import {UsersService} from 'users'
 import {firstValueFrom, map} from 'rxjs'
+import {GiftDto} from 'gifts/dto'
 import {CassoWebHookDto} from './dto'
 import {CassoResponse, UserInfo} from './casso.interface'
 
@@ -18,6 +20,7 @@ export class CassoService {
     private readonly dbClient: MongoClient,
     private readonly ordersService: OrdersService,
     private readonly etopService: EtopService,
+    private readonly giftsService: GiftsService,
     private readonly usersService: UsersService,
     private readonly httpService: HttpService
   ) {}
@@ -93,33 +96,46 @@ export class CassoService {
       })
 
       try {
-        await this.filterAndGift(order.items, Game.DOTA, user.steamId)
-        await this.filterAndGift(order.items, Game.CSGO, user.steamId)
-        const gifts = await this.etopService.getEtopGifts()
+        if (order.items.length > 0) {
+          await this.filterAndGift(order.items, Game.DOTA, user.steamId)
+          await this.filterAndGift(order.items, Game.CSGO, user.steamId)
+          const gifts = await this.etopService.getEtopGifts()
 
-        if (gifts.type !== 'success') {
-          throw new Error(gifts.message)
-        }
+          if (gifts.type !== 'success') {
+            throw new Error(gifts.message)
+          }
 
-        for (const gift of gifts.datas.list) {
-          if (gift.state === 2) {
-            this.logger.debug({gift}, 'Unlocking gift')
-            const unlock = await this.etopService.unLockEtopGift(gift.id)
-            this.logger.debug({unlock}, 'Unlock response')
+          for (const gift of gifts.datas.list) {
+            if (gift.state === 2) {
+              this.logger.debug({gift}, 'Unlocking gift')
+              const unlock = await this.etopService.unLockEtopGift(gift.id)
+              this.logger.debug({unlock}, 'Unlock response')
 
-            if (unlock.type !== 'success') {
-              throw new Error(unlock.message || unlock.errors)
-            }
-
-            const updatedOrder = await this.ordersService.updateOrderStatus(
-              order._id,
-              OrderStatus.SUCCESS
-            )
-
-            if (!updatedOrder.acknowledged) {
-              throw new Error(`Update order ${OrderStatus.SUCCESS} failed`)
+              if (unlock.type !== 'success') {
+                throw new Error(unlock.message || unlock.errors)
+              }
             }
           }
+        }
+
+        if (order.gifts.length > 0) {
+          const isActiveUpdated = await this.giftsService.updateGiftActiveByIds(
+            order.gifts.map((gift: Gift | GiftDto) => gift._id),
+            false
+          )
+
+          if (!isActiveUpdated) {
+            throw new Error('Update gifts active failed')
+          }
+        }
+
+        const updatedOrder = await this.ordersService.updateOrderStatus(
+          order._id,
+          OrderStatus.SUCCESS
+        )
+
+        if (!updatedOrder.acknowledged) {
+          throw new Error(`Update order ${OrderStatus.SUCCESS} failed`)
         }
 
         this.logger.log({transaction, order}, 'Payment order successfully')

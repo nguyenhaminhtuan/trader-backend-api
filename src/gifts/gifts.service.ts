@@ -34,17 +34,13 @@ export class GiftsService {
   }
 
   encryptCode(code: string): string {
-    const cipher = createCipheriv('aes-256-gcm', this.cipherKey, this.cipherIV)
+    const cipher = createCipheriv('aes256', this.cipherKey, this.cipherIV)
     const encrypted = cipher.update(code, 'utf-8', 'hex') + cipher.final('hex')
     return encrypted
   }
 
   decryptCode(encrypted: string): string {
-    const deCipher = createDecipheriv(
-      'aes-256-gcm',
-      this.cipherKey,
-      this.cipherIV
-    )
+    const deCipher = createDecipheriv('aes256', this.cipherKey, this.cipherIV)
     const deEncrypted =
       deCipher.update(encrypted, 'hex', 'utf-8') + deCipher.final('utf-8')
     return deEncrypted
@@ -52,7 +48,7 @@ export class GiftsService {
 
   async getAllGifts(): Promise<GiftDto[]> {
     const gifts = await this.giftCollection
-      .find({active: false})
+      .find({active: true})
       .sort('value', 1)
       .toArray()
     const lockGiftIds = (await this.getLockedGiftIds()) ?? []
@@ -61,17 +57,15 @@ export class GiftsService {
       .filter((gift) => lockGiftIds.indexOf(gift._id.toString()) < 0)
   }
 
-  async getGiftsById(ids: string[] | ObjectId[]) {
+  async getActiveGiftsByIds(ids: string[] | ObjectId[]): Promise<Gift[]> {
     const gifts = await this.giftCollection
       .find({
         _id: {$in: ids.map((id: string | ObjectId) => new ObjectId(id))},
-        active: false,
+        active: true,
       })
       .toArray()
     const lockGiftIds = (await this.getLockedGiftIds()) ?? []
-    return gifts
-      .map((gift) => GiftDto.fromGift(gift))
-      .filter((gift) => lockGiftIds.indexOf(gift._id.toString()) < 0)
+    return gifts.filter((gift) => lockGiftIds.indexOf(gift._id.toString()) < 0)
   }
 
   async createGift(dto: CreateGiftDto): Promise<Gift> {
@@ -92,6 +86,14 @@ export class GiftsService {
     }
 
     return gift
+  }
+
+  async updateGiftActiveByIds(giftIds: ObjectId[] | string[], active: boolean) {
+    const result = await this.giftCollection.updateOne(
+      {_id: {$in: giftIds.map((id: ObjectId | string) => new ObjectId(id))}},
+      {$set: {active, updatedAt: new Date()}}
+    )
+    return result.modifiedCount === giftIds.length
   }
 
   getLockedGiftIds(): Promise<string[]> {

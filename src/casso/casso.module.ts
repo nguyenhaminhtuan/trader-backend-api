@@ -3,6 +3,7 @@ import {HttpModule} from '@nestjs/axios'
 import {ConfigModule, ConfigService, EnvironmentVariables} from 'config'
 import {DatabaseModule} from 'database'
 import {EtopModule} from 'etop'
+import {GiftsModule} from 'gifts'
 import {OrdersModule} from 'orders'
 import {UsersModule} from 'users'
 import {CassoController} from './casso.controller'
@@ -14,6 +15,7 @@ import {CassoService} from './casso.service'
     OrdersModule,
     DatabaseModule,
     EtopModule,
+    GiftsModule,
     UsersModule,
     HttpModule.registerAsync({
       imports: [ConfigModule],
