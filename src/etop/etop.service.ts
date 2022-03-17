@@ -112,14 +112,16 @@ export class EtopService {
     return this.cacheManager.set<number[]>(
       this.lockedItemsKey,
       [...new Set([...lockItemIds, ...ids])],
-      {ttl: 10 * 60}
+      {ttl: 0}
     )
   }
 
   async removeLockedItems(ids: number[]): Promise<number[]> {
-    const lockItems = (await this.getLockedItemIds()) || []
-    return this.setLockedItems(
-      lockItems.filter((item) => ids.indexOf(item) < 0)
+    const lockItems = (await this.getLockedItemIds()) ?? []
+    return this.cacheManager.set(
+      this.lockedItemsKey,
+      lockItems.filter((item) => ids.indexOf(item) < 0),
+      {ttl: 0}
     )
   }
 

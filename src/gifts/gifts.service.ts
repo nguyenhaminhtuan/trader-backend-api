@@ -103,14 +103,16 @@ export class GiftsService {
     return this.cacheManager.set<string[]>(
       this.lockedGiftsKey,
       [...new Set([...lockGifts, ...ids])],
-      {ttl: 10 * 60}
+      {ttl: 0}
     )
   }
 
   async removeLockedItems(ids: string[]): Promise<string[]> {
     const lockGifts = (await this.getLockedGiftIds()) ?? []
-    return this.setLockedGifts(
-      lockGifts.filter((item) => ids.indexOf(item) < 0)
+    return this.cacheManager.set(
+      this.lockedGiftsKey,
+      lockGifts.filter((item) => ids.indexOf(item) < 0),
+      {ttl: 0}
     )
   }
 }
