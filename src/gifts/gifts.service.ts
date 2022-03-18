@@ -105,7 +105,7 @@ export class GiftsService {
     return this.cacheManager.set<string[]>(
       this.lockedGiftsKey,
       [...new Set([...lockGifts, ...ids])],
-      {ttl: 0}
+      {ttl: Infinity}
     )
   }
 
@@ -114,7 +114,7 @@ export class GiftsService {
     return this.cacheManager.set(
       this.lockedGiftsKey,
       lockGifts.filter((item) => ids.indexOf(item) < 0),
-      {ttl: 0}
+      {ttl: Infinity}
     )
   }
 }

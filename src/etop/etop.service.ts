@@ -112,7 +112,7 @@ export class EtopService {
     return this.cacheManager.set<number[]>(
       this.lockedItemsKey,
       [...new Set([...lockItemIds, ...ids])],
-      {ttl: 0}
+      {ttl: Infinity}
     )
   }
 
@@ -121,7 +121,7 @@ export class EtopService {
     return this.cacheManager.set(
       this.lockedItemsKey,
       lockItems.filter((item) => ids.indexOf(item) < 0),
-      {ttl: 0}
+      {ttl: Infinity}
     )
   }
 
