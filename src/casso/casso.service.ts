@@ -65,16 +65,13 @@ export class CassoService {
       const isOrderProccessed = order.status !== OrderStatus.PENDING
       const isUserNotFound = !user
 
-      if (isNotMatchAmount || isOrderProccessed || isUserNotFound) {
+      if (isOrderProccessed) {
+        return
+      }
+
+      if (isNotMatchAmount || isUserNotFound) {
         if (isNotMatchAmount) {
           this.logger.error({transaction}, 'Amount not match')
-        }
-
-        if (isOrderProccessed) {
-          this.logger.error(
-            {order: {_id: order._id, status: order.status}},
-            `Order already proccessed`
-          )
         }
 
         if (isUserNotFound) {
