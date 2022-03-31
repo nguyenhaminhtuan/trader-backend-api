@@ -49,7 +49,7 @@ export class CassoService {
 
       this.logger.log({transaction}, `Processing transaction`)
       const orderId = transaction.description.slice(
-        prefixIndex,
+        prefixIndex + prefix.length,
         prefixIndex + ORDERID_LENGTH + prefix.length
       )
       const order = await this.ordersService.getOrderById(orderId)
