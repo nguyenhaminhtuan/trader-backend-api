@@ -4,7 +4,7 @@ import {MongoClient, ReadPreference} from 'mongodb'
 import {DB_CLIENT} from 'database'
 import {EtopItem, EtopService, Game} from 'etop'
 import {Gift, GiftsService} from 'gifts'
-import {OrdersService, OrderStatus} from 'orders'
+import {ORDERID_LENGTH, OrdersService, OrderStatus} from 'orders'
 import {UsersService} from 'users'
 import {firstValueFrom, map} from 'rxjs'
 import {GiftDto} from 'gifts/dto'
@@ -41,16 +41,17 @@ export class CassoService {
 
     const prefix = this.ordersService.getOrderDescriptionPrefix()
     for (const transaction of data) {
-      this.logger.log({transaction}, `Processing transaction`)
+      const prefixIndex = transaction.description.indexOf(prefix)
 
-      if (!transaction.description.startsWith(prefix)) {
-        this.logger.error(
-          {transaction},
-          `Invalid prefix in description ${transaction.description}`
-        )
+      if (prefixIndex < 0) {
         return
       }
-      const orderId = transaction.description.split(' ')[0].replace(prefix, '')
+
+      this.logger.log({transaction}, `Processing transaction`)
+      const orderId = transaction.description.slice(
+        prefixIndex,
+        prefixIndex + ORDERID_LENGTH + prefix.length
+      )
       const order = await this.ordersService.getOrderById(orderId)
       this.logger.log(`Processing order with id ${orderId}`)
 
