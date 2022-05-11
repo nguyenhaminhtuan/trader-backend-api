@@ -254,7 +254,7 @@ export class OrdersService {
 
     const prefix = this.getOrderDescriptionPrefix()
     const qr = await this.vietQRService.generateQRCode({
-      accountNo: +bank.accountNo,
+      accountNo: bank.accountNo,
       accountName: bank.accountName,
       acqId: bank.bin,
       addInfo: `${prefix}${order._id}`,

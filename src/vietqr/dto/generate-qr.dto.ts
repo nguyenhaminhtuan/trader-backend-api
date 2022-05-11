@@ -1,6 +1,6 @@
 export class GenerateQRDto {
   acqId: number
-  accountNo: number
+  accountNo: string
   accountName: string
   amount: number
   addInfo: string
